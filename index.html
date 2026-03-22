@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AR Vacaciones - Rentas vacacionales de lujo en Playa del Carmen. Vive experiencias únicas frente al mar en el Caribe Mexicano.">
+  <meta name="keywords" content="rentas vacacionales, lujo, playa del carmen, airbnb, alquiler vacacional, beach rentals, AR Vacaciones">
+  <meta property="og:title" content="AR Vacaciones - Vive el Lujo Frente al Mar">
+  <meta property="og:description" content="Propiedades exclusivas en Playa del Carmen. Reserva tu experiencia premium hoy.">
+  <meta property="og:type" content="website">
+  <base href="./">
+  <title>AR Vacaciones - Vive el Lujo Frente al Mar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary: 160 84% 39%;
+      --primary-hover: 160 84% 32%;
+      --primary-light: 160 84% 95%;
+      --success: 160 84% 39%;
+      --danger: 0 84% 60%;
+      --warning: 38 92% 50%;
+      --background: 40 20% 98%;
+      --surface: 0 0% 100%;
+      --foreground: 0 0% 8%;
+      --muted: 0 0% 45%;
+      --border: 40 10% 90%;
+      --emerald: 160 84% 39%;
+      --beige: 40 30% 95%;
+      --beige-dark: 40 20% 85%;
+      --radius: 0.75rem;
+    }
+
+    * {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .font-display {
+      font-family: 'Playfair Display', serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: 'hsl(var(--primary))', hover: 'hsl(var(--primary-hover))', light: 'hsl(var(--primary-light))' },
+            emerald: { DEFAULT: 'hsl(var(--emerald))' },
+            success: 'hsl(var(--success))',
+            danger: 'hsl(var(--danger))',
+            warning: 'hsl(var(--warning))',
+            background: 'hsl(var(--background))',
+            surface: 'hsl(var(--surface))',
+            foreground: 'hsl(var(--foreground))',
+            muted: 'hsl(var(--muted))',
+            border: 'hsl(var(--border))',
+            beige: { DEFAULT: 'hsl(var(--beige))', dark: 'hsl(var(--beige-dark))' }
+          },
+          borderRadius: { DEFAULT: 'var(--radius)' },
+          fontFamily: {
+            display: ['Playfair Display', 'serif'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-foreground">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
