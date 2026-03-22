@@ -1,0 +1,124 @@
+[
+  {
+    "id": "prop_1",
+    "name": "Villa Oceanfront Paradise",
+    "location": "Playa del Carmen",
+    "price": 450,
+    "rating": 4.9,
+    "reviews": 127,
+    "guests": 8,
+    "bedrooms": 4,
+    "bathrooms": 4,
+    "image": "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop",
+    "gallery": [
+      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&h=900&fit=crop",
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop"
+    ],
+    "amenities": ["Piscina Privada", "Vista al Mar", "Chef Personal"],
+    "summary": "Villa amplia con acabados premium, privacidad y una experiencia orientada al huésped que quiere comodidad total frente al Caribe.",
+    "smoobuApartmentId": "",
+    "active": true,
+    "featured": true
+  },
+  {
+    "id": "prop_2",
+    "name": "Penthouse Beach",
+    "location": "Playa del Carmen",
+    "price": 380,
+    "rating": 4.8,
+    "reviews": 89,
+    "guests": 6,
+    "bedrooms": 3,
+    "bathrooms": 3,
+    "image": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop",
+    "gallery": [
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&h=900&fit=crop",
+      "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&h=900&fit=crop"
+    ],
+    "amenities": ["Rooftop", "Jacuzzi", "Vista al Mar"],
+    "summary": "Penthouse con rooftop privado, ubicación estratégica y distribución pensada para grupos que buscan buen diseño y cercanía a la playa.",
+    "smoobuApartmentId": "",
+    "active": true,
+    "featured": false
+  },
+  {
+    "id": "prop_3",
+    "name": "Casa del Mar",
+    "location": "Playa del Carmen",
+    "price": 290,
+    "rating": 4.9,
+    "reviews": 156,
+    "guests": 4,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "image": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop",
+    "gallery": [
+      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=900&fit=crop"
+    ],
+    "amenities": ["Playa Privada", "Kayaks", "BBQ"],
+    "summary": "Opción cómoda y muy rentable para familias o parejas que valoran una estancia relajada con buena presentación y funcionalidad.",
+    "smoobuApartmentId": "",
+    "active": true,
+    "featured": false
+  },
+  {
+    "id": "prop_4",
+    "name": "Luxury Suite Caribbean",
+    "location": "Playa del Carmen",
+    "price": 520,
+    "rating": 5,
+    "reviews": 94,
+    "guests": 10,
+    "bedrooms": 5,
+    "bathrooms": 5,
+    "image": "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop",
+    "gallery": [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&h=900&fit=crop"
+    ],
+    "amenities": ["Mayordomo", "Spa", "Cine Privado"],
+    "summary": "Propiedad premium de mayor ticket para un perfil que busca lujo visible y una experiencia más exclusiva desde el primer contacto.",
+    "smoobuApartmentId": "",
+    "active": true,
+    "featured": true
+  },
+  {
+    "id": "prop_5",
+    "name": "Eco Villa Jungle",
+    "location": "Playa del Carmen",
+    "price": 320,
+    "rating": 4.7,
+    "reviews": 73,
+    "guests": 5,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop",
+    "gallery": [
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=900&fit=crop"
+    ],
+    "amenities": ["Sustentable", "Jardín", "Yoga Deck"],
+    "summary": "Ideal para viajeros que quieren una vibra más relajada sin perder calidad visual, comodidad y una narrativa distintiva de estancia.",
+    "smoobuApartmentId": "",
+    "active": true,
+    "featured": false
+  },
+  {
+    "id": "prop_6",
+    "name": "Beachfront Condo Elite",
+    "location": "Playa del Carmen",
+    "price": 260,
+    "rating": 4.8,
+    "reviews": 201,
+    "guests": 4,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop",
+    "gallery": [
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&h=900&fit=crop"
+    ],
+    "amenities": ["Gym", "Pool Bar", "5th Avenue"],
+    "summary": "Condo práctico y atractivo para estancias vacacionales con muy buena ubicación y un perfil ideal para reservas repetibles.",
+    "smoobuApartmentId": "",
+    "active": true,
+    "featured": false
+  }
+]
