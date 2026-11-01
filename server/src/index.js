@@ -185,7 +185,7 @@ const buildLiveProperties = async () => {
       id: `smoobu_${id}`,
       smoobuApartmentId: id,
       name: override?.name && override.name !== 'Nueva propiedad' ? override.name : (apt.name || detail.name || 'Propiedad'),
-      location: detail.location?.city || override?.location || 'Playa del Carmen',
+      location: (detail.location?.city || override?.location || 'Playa del Carmen').replace(/\w/g, (c) => c.toUpperCase()),
       price,
       currency: detail.currency || 'MXN',
       rating: override?.rating || 0,
@@ -204,8 +204,10 @@ const buildLiveProperties = async () => {
     })
   })
 
-  liveCache = { at: Date.now(), list }
-  return list
+  // Without a Smoobu rate there is nothing to sell: keep it off the public site
+  const sellable = list.filter((p) => p.price > 0)
+  liveCache = { at: Date.now(), list: sellable }
+  return sellable
 }
 
 /**
