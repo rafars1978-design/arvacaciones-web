@@ -185,7 +185,7 @@ const buildLiveProperties = async () => {
       id: `smoobu_${id}`,
       smoobuApartmentId: id,
       name: override?.name && override.name !== 'Nueva propiedad' ? override.name : (apt.name || detail.name || 'Propiedad'),
-      location: (detail.location?.city || override?.location || 'Playa del Carmen').replace(/\w/g, (c) => c.toUpperCase()),
+      location: (detail.location?.city || override?.location || 'Playa del Carmen').toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()),
       price,
       currency: detail.currency || 'MXN',
       rating: override?.rating || 0,
