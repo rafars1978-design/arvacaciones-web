@@ -114,7 +114,7 @@ const fetchSmoobuApartments = async () => {
 
 // ── Live catalogue built from Smoobu (source of truth for price, capacity, rooms) ──
 // Apartments that must never be published on the public site.
-const EXCLUDED_NAME_PATTERNS = [/piedra del caribe/i]
+const EXCLUDED_NAME_PATTERNS = [/piedra del caribe/i, /cerens*106/i, /muyal/i]
 const isExcluded = (name = '') => EXCLUDED_NAME_PATTERNS.some((re) => re.test(name))
 
 const fetchSmoobuDetail = async (id) => {
