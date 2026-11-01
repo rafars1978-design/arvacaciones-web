@@ -10,6 +10,7 @@ import Stripe from 'stripe'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const dataPath = path.join(__dirname, 'data', 'properties.json')
+const photosPath = path.join(__dirname, 'data', 'photos.json')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -160,6 +161,7 @@ const buildLiveProperties = async () => {
   if (liveCache.list && Date.now() - liveCache.at < LIVE_TTL_MS) return liveCache.list
 
   const [apartments, local] = await Promise.all([fetchSmoobuApartments(), readProperties()])
+  const photos = JSON.parse(await fs.readFile(photosPath, 'utf-8').catch(() => '{}'))
   const wanted = apartments.filter((a) => !isExcluded(a.name || a.title))
   const ids = wanted.map((a) => String(a.id))
 
@@ -180,6 +182,7 @@ const buildLiveProperties = async () => {
     const price = rates[id] || Number(detail.price?.minimal) || 0
     const images = (apt.images || detail.images || []).map((img) => img.url || img).filter(Boolean)
     const hasCustomImage = override?.image && !override.image.includes('unsplash')
+    const curated = photos[id]
 
     list.push({
       id: `smoobu_${id}`,
@@ -193,8 +196,8 @@ const buildLiveProperties = async () => {
       guests,
       bedrooms,
       bathrooms,
-      image: hasCustomImage ? override.image : (images[0] || override?.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'),
-      gallery: override?.gallery?.length ? override.gallery : images.slice(1),
+      image: hasCustomImage ? override.image : (curated?.image || images[0] || override?.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'),
+      gallery: override?.gallery?.length ? override.gallery : (curated?.gallery || images.slice(1)),
       amenities: override?.amenities?.length ? override.amenities : equipmentLabels(detail.equipments),
       summary: override?.summary && !override.summary.startsWith('Propiedad administrable')
         ? override.summary
