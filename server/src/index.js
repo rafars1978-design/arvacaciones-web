@@ -112,6 +112,102 @@ const fetchSmoobuApartments = async () => {
   return Array.isArray(data) ? data : (data.apartments || data._embedded?.apartments || [])
 }
 
+// ── Live catalogue built from Smoobu (source of truth for price, capacity, rooms) ──
+// Apartments that must never be published on the public site.
+const EXCLUDED_NAME_PATTERNS = [/piedra del caribe/i]
+const isExcluded = (name = '') => EXCLUDED_NAME_PATTERNS.some((re) => re.test(name))
+
+const fetchSmoobuDetail = async (id) => {
+  const res = await fetch(`https://login.smoobu.com/api/apartments/${id}`, { headers: smoobuHeaders() })
+  if (!res.ok) throw new Error(`Smoobu apartment ${id} error: ${res.status}`)
+  return res.json()
+}
+
+const isoDay = (d) => d.toISOString().slice(0, 10)
+
+// Lowest nightly rate over the next 60 days, per apartment id
+const fetchSmoobuRates = async (ids) => {
+  const start = new Date()
+  const end = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+  const out = {}
+  for (let i = 0; i < ids.length; i += 10) {
+    const chunk = ids.slice(i, i + 10)
+    const qs = chunk.map((id) => `apartments[]=${id}`).join('&')
+    try {
+      const res = await fetch(`https://login.smoobu.com/api/rates?${qs}&start_date=${isoDay(start)}&end_date=${isoDay(end)}`, { headers: smoobuHeaders() })
+      if (!res.ok) continue
+      const body = await res.json()
+      for (const id of chunk) {
+        const days = Object.values(body?.data?.[id] || {}).map((d) => Number(d?.price)).filter((n) => n > 0)
+        if (days.length) out[id] = Math.min(...days)
+      }
+    } catch (err) {
+      console.error('Smoobu rates error:', err.message)
+    }
+  }
+  return out
+}
+
+const equipmentLabels = (equipments) => (Array.isArray(equipments) ? equipments : [])
+  .map((e) => (typeof e === 'string' ? e : e?.name || e?.label || ''))
+  .filter(Boolean)
+  .slice(0, 6)
+
+let liveCache = { at: 0, list: null }
+const LIVE_TTL_MS = 10 * 60 * 1000
+
+const buildLiveProperties = async () => {
+  if (liveCache.list && Date.now() - liveCache.at < LIVE_TTL_MS) return liveCache.list
+
+  const [apartments, local] = await Promise.all([fetchSmoobuApartments(), readProperties()])
+  const wanted = apartments.filter((a) => !isExcluded(a.name || a.title))
+  const ids = wanted.map((a) => String(a.id))
+
+  const detailResults = await Promise.allSettled(ids.map((id) => fetchSmoobuDetail(id)))
+  const rates = await fetchSmoobuRates(ids)
+
+  const list = []
+  wanted.forEach((apt, i) => {
+    const id = ids[i]
+    const detail = detailResults[i].status === 'fulfilled' ? detailResults[i].value : {}
+    const override = local.find((p) => p.smoobuApartmentId === id)
+    if (override && override.active === false) return
+
+    const rooms = detail.rooms || {}
+    const guests = Number(rooms.maxOccupancy) || 2
+    const bedrooms = Number(rooms.bedrooms) || 1
+    const bathrooms = Number(rooms.bathrooms) || 1
+    const price = rates[id] || Number(detail.price?.minimal) || 0
+    const images = (apt.images || detail.images || []).map((img) => img.url || img).filter(Boolean)
+    const hasCustomImage = override?.image && !override.image.includes('unsplash')
+
+    list.push({
+      id: `smoobu_${id}`,
+      smoobuApartmentId: id,
+      name: override?.name && override.name !== 'Nueva propiedad' ? override.name : (apt.name || detail.name || 'Propiedad'),
+      location: detail.location?.city || override?.location || 'Playa del Carmen',
+      price,
+      currency: detail.currency || 'MXN',
+      rating: override?.rating || 0,
+      reviews: override?.reviews || 0,
+      guests,
+      bedrooms,
+      bathrooms,
+      image: hasCustomImage ? override.image : (images[0] || override?.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'),
+      gallery: override?.gallery?.length ? override.gallery : images.slice(1),
+      amenities: override?.amenities?.length ? override.amenities : equipmentLabels(detail.equipments),
+      summary: override?.summary && !override.summary.startsWith('Propiedad administrable')
+        ? override.summary
+        : `${bedrooms} recámara${bedrooms === 1 ? '' : 's'}, ${bathrooms} baño${bathrooms === 1 ? '' : 's'}, hasta ${guests} huéspedes.`,
+      active: true,
+      featured: Boolean(override?.featured)
+    })
+  })
+
+  liveCache = { at: Date.now(), list }
+  return list
+}
+
 /**
  * Check availability in Smoobu
  */
@@ -192,42 +288,13 @@ app.get('/api/properties', async (_, res) => {
       return res.json({ properties: active, source: 'local' })
     }
 
-    // Merge Smoobu photos & info when live
     try {
-      const smoobuApts = await fetchSmoobuApartments()
-      const smoobuMap = {}
-      smoobuApts.forEach((apt) => { smoobuMap[String(apt.id)] = apt })
-
-      const merged = active.map((p) => {
-        const smoobu = p.smoobuApartmentId ? smoobuMap[p.smoobuApartmentId] : null
-        if (!smoobu) return p
-
-        // Use Smoobu photos if local property doesn't have custom ones
-        const smoobuImages = (smoobu.images || []).map((img) => img.url || img).filter(Boolean)
-        const gallery = p.gallery?.length ? p.gallery : smoobuImages.slice(1)
-        const image = p.image?.includes('unsplash') && smoobuImages.length
-          ? smoobuImages[0]
-          : p.image
-
-        return {
-          ...p,
-          image,
-          gallery,
-          // Only override name/summary if no local override
-          name: p.name !== 'Nueva propiedad' ? p.name : (smoobu.name || p.name),
-          summary: p.summary !== 'Propiedad administrable desde el panel interno.'
-            ? p.summary
-            : (smoobu.description || p.summary),
-          guests: p.guests || smoobu.maxPersons || 1,
-          bedrooms: p.bedrooms || smoobu.bedrooms || 1,
-          bathrooms: p.bathrooms || smoobu.bathrooms || 1
-        }
-      })
-
-      return res.json({ properties: merged, source: 'smoobu' })
+      const properties = await buildLiveProperties()
+      return res.json({ properties, source: 'smoobu' })
     } catch (smoobuErr) {
       console.error('Smoobu fetch error, falling back to local:', smoobuErr.message)
-      return res.json({ properties: active, source: 'local_fallback' })
+      const fallback = active.filter((p) => p.smoobuApartmentId && p.price > 0 && !isExcluded(p.name))
+      return res.json({ properties: fallback, source: 'local_fallback' })
     }
   } catch (err) {
     console.error(err)
@@ -253,6 +320,7 @@ app.post('/api/smoobu/sync', requireAuth, async (_, res) => {
     let updated = 0
 
     for (const apt of smoobuApts) {
+      if (isExcluded(apt.name || apt.title)) continue
       const smoobuId = String(apt.id)
       const existing = local.find((p) => p.smoobuApartmentId === smoobuId)
 
@@ -306,7 +374,7 @@ app.get('/api/smoobu/apartments', requireAuth, async (_, res) => {
   }
   try {
     const apts = await fetchSmoobuApartments()
-    res.json({ apartments: apts.map((a) => ({ id: String(a.id), name: a.name || a.title || String(a.id) })) })
+    res.json({ apartments: apts.filter((a) => !isExcluded(a.name || a.title)).map((a) => ({ id: String(a.id), name: a.name || a.title || String(a.id) })) })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
@@ -358,7 +426,9 @@ app.post('/api/search/availability', async (req, res) => {
       return res.status(400).json({ message: 'arrivalDate y departureDate son obligatorios.' })
     }
 
-    const properties = (await readProperties()).filter((p) => p.active)
+    const properties = useMock
+      ? (await readProperties()).filter((p) => p.active)
+      : await buildLiveProperties()
 
     if (useMock) {
       const availableProperties = properties

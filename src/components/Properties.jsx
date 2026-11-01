@@ -167,6 +167,7 @@ function Properties() {
                     {displayPrice > 0 && (
                       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl">
                         <span className="text-2xl font-bold text-foreground">${displayPrice}</span>
+                        {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
                         <span className="text-muted text-sm"> / noche</span>
                       </div>
                     )}
