@@ -24,13 +24,26 @@ const PAGE_META = {
 const KEY = 'arv_lang'
 const isLang = (code) => LANGUAGES.some((l) => l.code === code)
 
+// Priority: ?lang=xx in the link, then the visitor's own choice, then the browser's language
+// (English, French or German visitors get their language automatically), otherwise Spanish.
+const detect = () => {
+  try {
+    for (const l of navigator.languages || [navigator.language]) {
+      const code = String(l || '').slice(0, 2).toLowerCase()
+      if (isLang(code)) return code
+    }
+  } catch { /* no navigator */ }
+  return 'es'
+}
+
 export const getLang = () => {
   try {
+    const fromLink = new URLSearchParams(window.location.search).get('lang')
+    if (isLang(fromLink)) return fromLink
     const saved = localStorage.getItem(KEY)
-    return isLang(saved) ? saved : 'es'
-  } catch {
-    return 'es'
-  }
+    if (isLang(saved)) return saved
+  } catch { /* storage blocked */ }
+  return detect()
 }
 
 const I18nContext = createContext({ lang: 'es', setLang: () => {}, t: (s) => s })
