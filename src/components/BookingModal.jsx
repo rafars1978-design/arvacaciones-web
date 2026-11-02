@@ -294,6 +294,11 @@ function BookingModal({ property, availability, onClose }) {
                   <span>Total {hasQuote ? '(IVA incluido)' : ''}</span>
                   <span>{hasQuote || !property.smoobuApartmentId ? `$${fmt(totalPrice)} ${currency}` : '—'}</span>
                 </div>
+                {hasQuote && quote.totalMxn > 0 && (
+                  <p className="text-xs text-muted text-right">
+                    Se cobra en pesos: ≈ ${fmt(quote.totalMxn)} MXN (tipo de cambio {fmt(quote.fxRate)})
+                  </p>
+                )}
               </div>
 
               {error && (
@@ -315,7 +320,7 @@ function BookingModal({ property, availability, onClose }) {
               </button>
 
               <p className="text-center text-xs text-muted">
-                Pago seguro con Stripe · Tu tarjeta se carga al confirmar
+                Pago seguro con Clip · Tarjeta de crédito o débito
               </p>
             </form>
           </div>

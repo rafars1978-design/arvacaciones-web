@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename)
 const dataPath = path.join(__dirname, 'data', 'properties.json')
 const photosPath = path.join(__dirname, 'data', 'photos.json')
 const feesPath = path.join(__dirname, 'data', 'fees.json')
+const pendingPath = path.join(__dirname, 'data', 'pending-bookings.json')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -23,6 +24,12 @@ const SMOOBU_API_KEY = process.env.SMOOBU_API_KEY || ''
 const SMOOBU_CUSTOMER_ID = process.env.SMOOBU_CUSTOMER_ID || ''
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
+
+const CLIP_API_KEY = process.env.CLIP_API_KEY || ''
+const CLIP_SECRET_KEY = process.env.CLIP_SECRET_KEY || ''
+const SITE_URL = (process.env.SITE_URL || 'https://www.arvacaciones.site').replace(/\/$/, '')
+const API_PUBLIC_URL = (process.env.API_PUBLIC_URL || 'https://ar-vacaciones-api.onrender.com').replace(/\/$/, '')
+const clipEnabled = Boolean(CLIP_API_KEY && CLIP_SECRET_KEY)
 
 const useMock = !SMOOBU_API_KEY || !SMOOBU_CUSTOMER_ID
 
@@ -347,6 +354,52 @@ const createSmoobuReservation = async ({ apartmentId, arrivalDate, departureDate
   return data
 }
 
+// ─── CLIP PAYMENTS (MXN) ───────────────────────────────────────────────────────
+const clipHeaders = () => ({
+  Authorization: `Basic ${Buffer.from(`${CLIP_API_KEY}:${CLIP_SECRET_KEY}`).toString('base64')}`,
+  'Content-Type': 'application/json'
+})
+
+// USD -> MXN: live rate cached for 6h, env fallback. Clip only charges in MXN.
+let fxCache = { at: 0, rate: 0 }
+const getUsdMxn = async () => {
+  if (fxCache.rate && Date.now() - fxCache.at < 6 * 60 * 60 * 1000) return fxCache.rate
+  const margin = Number(process.env.FX_MARGIN || 0) // e.g. 0.02 = +2%
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD')
+    const body = await res.json()
+    const live = Number(body?.rates?.MXN)
+    if (live > 5 && live < 60) {
+      fxCache = { at: Date.now(), rate: Math.round(live * (1 + margin) * 10000) / 10000 }
+      return fxCache.rate
+    }
+  } catch (err) {
+    console.error('FX error:', err.message)
+  }
+  const fallback = Number(process.env.USD_MXN_RATE || 0)
+  if (fallback > 0) return fallback
+  throw new Error('No se pudo obtener el tipo de cambio USD/MXN.')
+}
+
+const toMxn = async (amount, currency) => {
+  if (String(currency || 'USD').toUpperCase() === 'MXN') return { amountMxn: Math.round(amount * 100) / 100, rate: 1 }
+  const rate = await getUsdMxn()
+  return { amountMxn: Math.round(amount * rate * 100) / 100, rate }
+}
+
+// Pending bookings wait here until Clip confirms the payment (also mirrored to disk, best effort)
+const pendingBookings = new Map()
+const loadPending = async () => {
+  try {
+    const raw = JSON.parse(await fs.readFile(pendingPath, 'utf-8'))
+    Object.entries(raw).forEach(([k, v]) => pendingBookings.set(k, v))
+  } catch { /* first run */ }
+}
+const savePending = async () => {
+  try { await fs.writeFile(pendingPath, JSON.stringify(Object.fromEntries(pendingBookings)), 'utf-8') } catch { /* ephemeral disk */ }
+}
+loadPending()
+
 // ─── ROUTES ────────────────────────────────────────────────────────────────────
 
 app.get('/api/health', (_, res) => {
@@ -354,6 +407,7 @@ app.get('/api/health', (_, res) => {
     ok: true,
     service: 'AR Vacaciones API',
     smoobu: useMock ? 'mock' : 'live',
+    clip: clipEnabled ? 'configured' : 'not configured',
     stripe: stripe ? 'configured' : 'not configured'
   })
 })
@@ -554,7 +608,16 @@ app.post('/api/quote', async (req, res) => {
     }
     const known = (await buildLiveProperties()).find((p) => p.smoobuApartmentId === String(smoobuApartmentId))
     if (!known) return res.status(404).json({ ok: false, message: 'Propiedad no encontrada.' })
-    res.json({ ...(await computeQuote({ smoobuApartmentId, arrivalDate, departureDate })), currency: known.currency })
+    const quote = await computeQuote({ smoobuApartmentId, arrivalDate, departureDate })
+    const out = { ...quote, currency: known.currency }
+    if (quote.ok && clipEnabled) {
+      try {
+        const { amountMxn, rate } = await toMxn(quote.total, known.currency)
+        out.totalMxn = amountMxn
+        out.fxRate = rate
+      } catch { /* quote still valid without the MXN preview */ }
+    }
+    res.json(out)
   } catch (err) {
     console.error(err)
     res.status(500).json({ ok: false, message: 'No pudimos calcular la cotización.' })
@@ -601,6 +664,61 @@ app.post('/api/bookings/checkout', async (req, res) => {
       : null
     if (known && !known.ok) return res.status(409).json({ message: known.message })
     const chargeTotal = known?.ok ? known.total : totalPrice
+
+    // Clip: redirected checkout in MXN, booking is confirmed by the webhook
+    if (clipEnabled) {
+      const bookingRef = `ARV-${Date.now().toString(36).toUpperCase()}`
+      const currencyCode = (known?.ok ? (await buildLiveProperties()).find((p) => p.smoobuApartmentId === String(smoobuApartmentId))?.currency : null) || currency || 'USD'
+      const { amountMxn, rate } = await toMxn(chargeTotal, currencyCode)
+      const successParams = new URLSearchParams({ ref: bookingRef, property: propertyName || '', arrival: arrivalDate, departure: departureDate })
+
+      const clipResp = await fetch('https://api.payclip.com/v2/checkout', {
+        method: 'POST',
+        headers: clipHeaders(),
+        body: JSON.stringify({
+          amount: amountMxn,
+          currency: 'MXN',
+          purchase_description: `${propertyName || 'Reserva'} · ${arrivalDate} a ${departureDate}`.slice(0, 250),
+          redirection_url: {
+            success: `${SITE_URL}/#/booking/success?${successParams.toString()}`,
+            error: `${SITE_URL}/#/?pago=error`,
+            default: `${SITE_URL}/#/`
+          },
+          webhook_url: `${API_PUBLIC_URL}/api/clip/webhook`,
+          metadata: { me_reference_id: bookingRef }
+        })
+      })
+      const clipData = await clipResp.json().catch(() => ({}))
+      if (!clipResp.ok || !clipData.payment_request_url) {
+        console.error('[Clip] checkout error:', clipResp.status, JSON.stringify(clipData).slice(0, 400))
+        return res.status(502).json({ message: 'No pudimos iniciar el pago con Clip. Intenta de nuevo.' })
+      }
+
+      const pending = {
+        bookingRef,
+        paymentRequestId: clipData.payment_request_id,
+        smoobuApartmentId: String(smoobuApartmentId || ''),
+        propertyName,
+        arrivalDate,
+        departureDate,
+        guests,
+        firstName,
+        lastName,
+        email,
+        phone,
+        totalUsd: chargeTotal,
+        currency: currencyCode,
+        amountMxn,
+        fxRate: rate,
+        paid: false,
+        createdAt: new Date().toISOString()
+      }
+      pendingBookings.set(bookingRef, pending)
+      if (clipData.payment_request_id) pendingBookings.set(String(clipData.payment_request_id), pending)
+      await savePending()
+      console.log(`[Clip] Pago creado ${bookingRef} — ${propertyName} ${arrivalDate}→${departureDate} $${amountMxn} MXN`)
+      return res.json({ url: clipData.payment_request_url, bookingRef, mode: 'clip' })
+    }
 
     // Mock mode: return a fake session URL for testing
     if (!stripe) {
@@ -650,6 +768,58 @@ app.post('/api/bookings/checkout', async (req, res) => {
   } catch (err) {
     console.error('Stripe checkout error:', err)
     res.status(500).json({ message: err.message })
+  }
+})
+
+// ── Clip: webhook (payment confirmed → create Smoobu reservation) ─────────────
+app.post('/api/clip/webhook', async (req, res) => {
+  // Always answer fast; Clip retries on non-2xx
+  res.json({ received: true })
+  try {
+    if (!clipEnabled) return
+    const body = req.body || {}
+    const paymentRequestId = body.payment_request_id || body.resource_id || body.id
+    if (!paymentRequestId) return
+
+    // Never trust the body: ask Clip for the real status of this payment request
+    const statusResp = await fetch(`https://api.payclip.com/v2/checkout/${paymentRequestId}`, { headers: clipHeaders() })
+    const status = await statusResp.json().catch(() => ({}))
+    const state = String(status.resource_status || status.status || status.payment_request_status || '').toUpperCase()
+    console.log(`[Clip] webhook ${paymentRequestId} -> ${state}`)
+    if (!['COMPLETED', 'PAID', 'APPROVED'].includes(state)) return
+
+    const ref = status?.metadata?.me_reference_id || body.me_reference_id
+    const pending = pendingBookings.get(String(paymentRequestId)) || (ref ? pendingBookings.get(ref) : null)
+    if (!pending) {
+      console.error(`[Clip] Pago confirmado sin reserva pendiente: ${paymentRequestId} (${ref || 'sin ref'}). Revisar en Clip y crear manualmente.`)
+      return
+    }
+    if (pending.paid) return
+    pending.paid = true
+    await savePending()
+
+    if (!useMock && pending.smoobuApartmentId) {
+      try {
+        const reservation = await createSmoobuReservation({
+          apartmentId: pending.smoobuApartmentId,
+          arrivalDate: pending.arrivalDate,
+          departureDate: pending.departureDate,
+          firstName: pending.firstName || 'Guest',
+          lastName: pending.lastName || '',
+          email: pending.email,
+          phone: pending.phone,
+          adults: pending.guests,
+          price: pending.totalUsd,
+          currency: pending.currency,
+          note: `Reserva web arvacaciones.site · Pago Clip ${pending.bookingRef} · $${pending.amountMxn} MXN (TC ${pending.fxRate})`
+        })
+        console.log(`[Clip] Smoobu reservation created: ${reservation.id} (${pending.bookingRef})`)
+      } catch (err) {
+        console.error(`[Clip] PAGADO pero falló la reserva en Smoobu (${pending.bookingRef}):`, err.message)
+      }
+    }
+  } catch (err) {
+    console.error('[Clip] webhook error:', err.message)
   }
 })
 

@@ -4,3 +4,4 @@ dist/
 *.env.local
 server/src/data/inquiries.json
 server/node_modules/
+server/src/data/pending-bookings.json
