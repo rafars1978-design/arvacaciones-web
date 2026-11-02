@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Play, ChevronDown, Calendar, Users, Loader2 } from 'lucide-react'
+import { Play, Calendar, Users, Loader2 } from 'lucide-react'
 import { api } from '../lib/api'
 
 function Hero() {
@@ -63,7 +63,7 @@ function Hero() {
   }
 
   return (
-    <section id="hero" className="relative h-screen min-h-[700px] overflow-hidden">
+    <section id="hero" className="relative min-h-screen overflow-hidden">
       {slides.map((slide, index) => (
         <motion.div
           key={index}
@@ -80,8 +80,8 @@ function Hero() {
         </motion.div>
       ))}
 
-      <div className="relative z-10 h-full flex flex-col">
-        <div className="flex-1 flex items-center justify-center px-4 md:px-8 pt-32">
+      <div className="relative z-10 min-h-screen flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-4 md:px-8 pt-28 pb-8">
           <div className="text-center max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -147,7 +147,7 @@ function Hero() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="px-4 md:px-8 pb-12"
+          className="px-4 md:px-8 pb-10"
         >
           <div className="max-w-4xl mx-auto glass-dark rounded-2xl p-6 md:p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -209,24 +209,7 @@ function Hero() {
           </div>
         </motion.div>
 
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-3">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-2 rounded-full transition-all duration-500 ${currentSlide === index ? 'w-8 bg-primary' : 'w-2 bg-white/50 hover:bg-white/70'}`}
-            />
-          ))}
-        </div>
 
-        <motion.a
-          href="#about"
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 hover:text-white transition-colors"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <ChevronDown className="w-8 h-8" />
-        </motion.a>
       </div>
     </section>
   )
