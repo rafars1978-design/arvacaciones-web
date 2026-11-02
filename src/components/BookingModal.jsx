@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Users, Loader2, CreditCard } from 'lucide-react'
 import { api } from '../lib/api'
@@ -9,7 +9,7 @@ function BookingModal({ property, availability, onClose }) {
 
   const [form, setForm] = useState({
     arrivalDate: tomorrow,
-    departureDate: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
+    departureDate: new Date(Date.now() + (1 + Math.max(1, property.minNights || 1)) * 86400000).toISOString().split("T")[0],
     guests: 1,
     firstName: '',
     lastName: '',
@@ -26,7 +26,40 @@ function BookingModal({ property, availability, onClose }) {
   const nights = Math.max(1, Math.round(
     (new Date(form.departureDate) - new Date(form.arrivalDate)) / (1000 * 60 * 60 * 24)
   ))
-  const totalPrice = pricePerNight * nights
+
+  // Live quote from Smoobu: season rates, cleaning fee, 16% IVA, minimum stay
+  const [quote, setQuote] = useState(null)
+  const [quoting, setQuoting] = useState(false)
+
+  useEffect(() => {
+    if (!property.smoobuApartmentId || !form.arrivalDate || !form.departureDate) return undefined
+    if (new Date(form.departureDate) <= new Date(form.arrivalDate)) {
+      setQuote({ ok: false, message: 'La fecha de salida debe ser posterior a la de llegada.' })
+      return undefined
+    }
+    let cancelled = false
+    setQuoting(true)
+    const timer = setTimeout(async () => {
+      try {
+        const q = await api.getQuote({
+          smoobuApartmentId: property.smoobuApartmentId,
+          arrivalDate: form.arrivalDate,
+          departureDate: form.departureDate
+        })
+        if (!cancelled) setQuote(q)
+      } catch (err) {
+        if (!cancelled) setQuote({ ok: false, message: err.message })
+      } finally {
+        if (!cancelled) setQuoting(false)
+      }
+    }, 400)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [property.smoobuApartmentId, form.arrivalDate, form.departureDate])
+
+  const hasQuote = Boolean(quote?.ok)
+  const totalPrice = hasQuote ? quote.total : pricePerNight * nights
+  const canPay = !property.smoobuApartmentId || (hasQuote && !quoting)
+  const fmt = (n) => Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -107,7 +140,7 @@ function BookingModal({ property, availability, onClose }) {
             <div className="absolute bottom-4 left-5 right-12">
               <h2 className="text-white font-display text-xl font-bold leading-tight">{property.name}</h2>
               <p className="text-white/80 text-sm mt-0.5">
-                ${pricePerNight} {currency} / noche
+                desde ${Math.round(pricePerNight)} {currency} / noche + IVA
               </p>
             </div>
             <button
@@ -226,13 +259,40 @@ function BookingModal({ property, availability, onClose }) {
 
               {/* Price summary */}
               <div className="rounded-2xl bg-beige p-4 space-y-2">
-                <div className="flex justify-between text-sm text-muted">
-                  <span>${pricePerNight} × {nights} noche{nights !== 1 ? 's' : ''}</span>
-                  <span>${totalPrice.toFixed(0)} {currency}</span>
-                </div>
+                {quoting && <p className="text-xs text-muted">Calculando precio…</p>}
+                {!quoting && quote && !quote.ok && (
+                  <p className="text-sm text-red-600">{quote.message}</p>
+                )}
+                {hasQuote && !quoting && (
+                  <>
+                    <div className="flex justify-between text-sm text-muted">
+                      <span>{quote.nights} noche{quote.nights !== 1 ? 's' : ''} (prom. ${fmt(quote.nightlyAvg)} / noche)</span>
+                      <span>${fmt(quote.lodging)}</span>
+                    </div>
+                    {quote.cleaning > 0 && (
+                      <div className="flex justify-between text-sm text-muted">
+                        <span>Limpieza</span>
+                        <span>${fmt(quote.cleaning)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm text-muted">
+                      <span>IVA {Math.round(quote.ivaRate * 100)}%</span>
+                      <span>${fmt(quote.iva)}</span>
+                    </div>
+                    {quote.minNights > 1 && (
+                      <p className="text-xs text-muted">Estancia mínima en estas fechas: {quote.minNights} noches.</p>
+                    )}
+                  </>
+                )}
+                {!property.smoobuApartmentId && (
+                  <div className="flex justify-between text-sm text-muted">
+                    <span>${pricePerNight} × {nights} noche{nights !== 1 ? 's' : ''}</span>
+                    <span>${totalPrice.toFixed(0)} {currency}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-foreground border-t border-border pt-2 mt-2">
-                  <span>Total</span>
-                  <span>${totalPrice.toFixed(0)} {currency}</span>
+                  <span>Total {hasQuote ? '(IVA incluido)' : ''}</span>
+                  <span>{hasQuote || !property.smoobuApartmentId ? `$${fmt(totalPrice)} ${currency}` : '—'}</span>
                 </div>
               </div>
 
@@ -244,7 +304,7 @@ function BookingModal({ property, availability, onClose }) {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !canPay}
                 className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all"
               >
                 {loading ? (

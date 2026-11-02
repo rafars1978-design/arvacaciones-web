@@ -48,6 +48,7 @@ export const api = {
     updateProperty: (id, body, token) => request(`/properties/${id}`, { method: 'PUT', body: JSON.stringify(body), token }),
     deleteProperty: (id, token) => request(`/properties/${id}`, { method: 'DELETE', token }),
     // Booking & Stripe
+    getQuote: (body) => request('/quote', { method: 'POST', body: JSON.stringify(body) }),
     createCheckout: (body) => request('/bookings/checkout', { method: 'POST', body: JSON.stringify(body) }),
     // Admin: Smoobu
     getSmoobuApartments: (token) => request('/smoobu/apartments', { token }),

@@ -213,10 +213,26 @@ const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate }) =
   }
 }
 
-const equipmentLabels = (equipments) => (Array.isArray(equipments) ? equipments : [])
-  .map((e) => (typeof e === 'string' ? e : e?.name || e?.label || ''))
-  .filter(Boolean)
-  .slice(0, 6)
+// Smoobu amenity names (English) -> label shown on the site, in display priority order
+const AMENITY_LABELS = [
+  ['Pool', 'Alberca'],
+  ['WiFi', 'WiFi'],
+  ['Air conditioning', 'Aire acondicionado'],
+  ['Kitchen', 'Cocina equipada'],
+  ['Free parking on premises', 'Estacionamiento'],
+  ['Fitness Center', 'Gimnasio'],
+  ['Balcony', 'Balcón'],
+  ['Smart TV', 'Smart TV'],
+  ['Washing machine', 'Lavadora'],
+  ['Work space', 'Espacio de trabajo'],
+  ['Coffee maker', 'Cafetera'],
+  ['Beach', 'Cerca de la playa']
+]
+
+const equipmentLabels = (amenities) => {
+  const names = new Set((Array.isArray(amenities) ? amenities : []).map((e) => (typeof e === 'string' ? e : e?.name || e?.label || '')))
+  return AMENITY_LABELS.filter(([en]) => names.has(en)).map(([, es]) => es).slice(0, 8)
+}
 
 let liveCache = { at: 0, list: null }
 const LIVE_TTL_MS = 10 * 60 * 1000
@@ -267,7 +283,7 @@ const buildLiveProperties = async () => {
       bathrooms,
       image: hasCustomImage ? override.image : (curated?.image || images[0] || override?.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'),
       gallery: override?.gallery?.length ? override.gallery : (curated?.gallery || images.slice(1)),
-      amenities: override?.amenities?.length ? override.amenities : equipmentLabels(detail.equipments),
+      amenities: override?.amenities?.length ? override.amenities : equipmentLabels(detail.amenities || detail.equipments),
       summary: override?.summary && !override.summary.startsWith('Propiedad administrable')
         ? override.summary
         : `${bedrooms} recámara${bedrooms === 1 ? '' : 's'}, ${bathrooms} baño${bathrooms === 1 ? '' : 's'}, hasta ${guests} huéspedes.`,

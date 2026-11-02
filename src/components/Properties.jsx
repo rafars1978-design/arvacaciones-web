@@ -4,6 +4,8 @@ import { MapPin, Users, Bed, Bath, Star, Heart, ChevronLeft, ChevronRight, WifiO
 import { api } from '../lib/api'
 import { buildWhatsAppLink } from '../lib/config'
 import BookingModal from './BookingModal'
+import PropertyCarousel, { getImages } from './PropertyCarousel'
+import PropertyDetail from './PropertyDetail'
 
 function Properties() {
   const ref = useRef(null)
@@ -14,6 +16,7 @@ function Properties() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [bookingProperty, setBookingProperty] = useState(null)
+  const [detailProperty, setDetailProperty] = useState(null)
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -140,19 +143,16 @@ function Properties() {
                   transition={{ duration: 0.6, delay: 0.1 + index * 0.08 }}
                   className="bg-surface rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 group"
                 >
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={property.image}
+                  <div className="relative h-64 cursor-pointer" onClick={() => setDetailProperty(property)}>
+                    <PropertyCarousel
+                      images={getImages(property)}
                       alt={property.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'
-                      }}
+                      className="h-full"
+                      imgClassName="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                     <button
-                      onClick={() => toggleFavorite(property.id)}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(property.id) }}
                       className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-all shadow-lg"
                     >
                       <Heart className={`w-5 h-5 transition-colors ${favorites.includes(property.id) ? 'fill-red-500 text-red-500' : 'text-foreground/60'}`} />
@@ -165,10 +165,13 @@ function Properties() {
                     )}
 
                     {displayPrice > 0 && (
-                      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl">
-                        <span className="text-2xl font-bold text-foreground">${displayPrice}</span>
+                      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl pointer-events-none">
+                        <span className="text-2xl font-bold text-foreground">${Math.round(displayPrice)}</span>
                         {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
-                        <span className="text-muted text-sm"> / noche</span>
+                        <span className="text-muted text-sm"> / noche + IVA</span>
+                        {(availabilityMatch?.minNights || property.minNights) > 1 && (
+                          <div className="text-[11px] text-muted leading-tight">Mín. {availabilityMatch?.minNights || property.minNights} noches</div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -188,7 +191,10 @@ function Properties() {
                       </div>
                     </div>
 
-                    <h3 className="font-display text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                    <h3
+                      className="font-display text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors cursor-pointer"
+                      onClick={() => setDetailProperty(property)}
+                    >
                       {property.name}
                     </h3>
                     <p className="text-muted text-sm leading-relaxed mb-4 line-clamp-2">{property.summary}</p>
@@ -239,6 +245,14 @@ function Properties() {
           </motion.a>
         </motion.div>
       </div>
+
+      {detailProperty && (
+        <PropertyDetail
+          property={detailProperty}
+          onClose={() => setDetailProperty(null)}
+          onReserve={(property) => { setDetailProperty(null); setBookingProperty(property) }}
+        />
+      )}
 
       {/* Booking Modal */}
       {bookingProperty && (
