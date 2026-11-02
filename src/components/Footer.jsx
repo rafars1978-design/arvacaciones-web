@@ -15,10 +15,10 @@ function Footer() {
   ]
 
   const legal = [
-    { name: 'Términos y Condiciones', href: '#' },
-    { name: 'Política de Privacidad', href: '#' },
-    { name: 'Política de Cancelación', href: '#' },
-    { name: 'Aviso Legal', href: '#' }
+    { name: 'Términos y Condiciones', href: '#/terminos' },
+    { name: 'Aviso de Privacidad', href: '#/privacidad' },
+    { name: 'Política de Cancelación', href: '#/cancelacion' },
+    { name: 'Aviso Legal', href: '#/aviso-legal' }
   ]
 
   return (
@@ -55,9 +55,9 @@ function Footer() {
               <h5 className="font-medium text-sm text-white/60 mb-3">También en:</h5>
               <div className="flex flex-wrap gap-2">
                 {['Airbnb', 'Booking'].map((platform) => (
-                  <a key={platform} href="#" className="text-xs px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors flex items-center gap-1">
-                    {platform}<ExternalLink className="w-3 h-3" />
-                  </a>
+                  <span key={platform} className="text-xs px-3 py-1.5 bg-white/10 rounded-full">
+                    {platform}
+                  </span>
                 ))}
               </div>
             </div>

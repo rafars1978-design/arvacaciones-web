@@ -12,6 +12,7 @@ import ContactForm from './components/ContactForm'
 import Footer from './components/Footer'
 import AdminPage from './pages/AdminPage'
 import BookingSuccessPage from './pages/BookingSuccessPage'
+import LegalPage from './pages/LegalPage'
 import { MessageCircle } from 'lucide-react'
 import { buildWhatsAppLink } from './lib/config'
 
@@ -38,6 +39,10 @@ function Layout() {
         <Route path="/" element={<HomePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/booking/success" element={<BookingSuccessPage />} />
+        <Route path="/terminos" element={<LegalPage page="terminos" />} />
+        <Route path="/privacidad" element={<LegalPage page="privacidad" />} />
+        <Route path="/cancelacion" element={<LegalPage page="cancelacion" />} />
+        <Route path="/aviso-legal" element={<LegalPage page="aviso-legal" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
