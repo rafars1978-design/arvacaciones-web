@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Users, Loader2, CreditCard } from 'lucide-react'
 import { api } from '../lib/api'
+import { getBroker } from '../lib/broker'
 
 function BookingModal({ property, availability, onClose }) {
   const today = new Date().toISOString().split('T')[0]
@@ -86,6 +87,7 @@ function BookingModal({ property, availability, onClose }) {
         propertyId: property.id,
         smoobuApartmentId: property.smoobuApartmentId || availabilityMatch?.smoobuApartmentId || '',
         propertyName: property.name,
+        brokerCode: getBroker()?.code || '',
         arrivalDate: form.arrivalDate,
         departureDate: form.departureDate,
         guests: Number(form.guests),
@@ -329,6 +331,9 @@ function BookingModal({ property, availability, onClose }) {
               <p className="text-center text-xs text-muted">
                 Pago seguro con Clip · Tarjeta de crédito o débito
               </p>
+              {getBroker() && (
+                <p className="text-center text-xs text-primary font-medium">Reserva realizada a través de {getBroker().name}</p>
+              )}
               <p className="text-center text-xs text-muted">
                 <strong>Tarifa no reembolsable.</strong> Al continuar aceptas los{' '}
                 <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="underline">Términos</a> y la{' '}

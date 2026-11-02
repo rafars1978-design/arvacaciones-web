@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { api } from '../lib/api'
+import BrokersPanel from '../components/BrokersPanel'
 import { auth } from '../lib/auth'
 import { Lock, Plus, Pencil, Trash2, Image as ImageIcon, RefreshCcw, LogOut, BedDouble, Bath, Users, Link2 } from 'lucide-react'
 
@@ -242,6 +243,8 @@ function AdminPage() {
             </button>
           </div>
         </div>
+
+        <BrokersPanel token={token} />
 
         {status && (
           <div className="grid md:grid-cols-3 gap-4">

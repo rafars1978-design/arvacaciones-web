@@ -13,6 +13,7 @@ const dataPath = path.join(__dirname, 'data', 'properties.json')
 const photosPath = path.join(__dirname, 'data', 'photos.json')
 const feesPath = path.join(__dirname, 'data', 'fees.json')
 const pendingPath = path.join(__dirname, 'data', 'pending-bookings.json')
+const brokersPath = path.join(__dirname, 'data', 'brokers.json')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -452,6 +453,51 @@ const savePending = async () => {
 }
 loadPending()
 
+// ─── BROKERS ───────────────────────────────────────────────────────────────────
+// Brokers live in data/brokers.json: [{ "code": "MARIA", "name": "Maria Lopez", "rate": 0.10, "active": true }]
+// A booking made through ?b=CODE is tagged in the Smoobu reservation notes, which is the source of
+// truth for the commission report (so nothing is lost if the server restarts).
+const readBrokers = async () => JSON.parse(await fs.readFile(brokersPath, 'utf-8').catch(() => '[]'))
+const findBroker = async (code) => {
+  const wanted = String(code || '').trim().toUpperCase()
+  if (!wanted) return null
+  return (await readBrokers()).find((b) => b.active !== false && String(b.code).toUpperCase() === wanted) || null
+}
+const round2 = (n) => Math.round(n * 100) / 100
+
+// Reads every Smoobu booking tagged with a broker (notes are part of the booking list)
+const fetchBrokerBookings = async () => {
+  const from = '2026-01-01'
+  const to = addDays(new Date().toISOString().slice(0, 10), 540)
+  const rows = []
+  for (let page = 1; page <= 40; page++) {
+    const qs = new URLSearchParams({ from, to, showCancellation: 'false', pageSize: '100', page: String(page) })
+    const res = await fetch(`https://login.smoobu.com/api/reservations?${qs}`, { headers: smoobuHeaders() })
+    if (!res.ok) throw new Error(`Smoobu reservations error: ${res.status}`)
+    const body = await res.json()
+    for (const b of body.bookings || []) {
+      if (b.type === 'cancellation') continue
+      const notice = String(b.notice || '')
+      const tag = notice.match(/BROKER:([A-Za-z0-9_-]+)/)
+      if (!tag) continue
+      rows.push({
+        id: b.id,
+        ref: (notice.match(/ARV-[A-Z0-9]+/) || [''])[0],
+        broker: tag[1].toUpperCase(),
+        property: b.apartment?.name || '',
+        guest: b['guest-name'] || [b.firstname, b.lastname].filter(Boolean).join(' '),
+        arrival: b.arrival,
+        departure: b.departure,
+        price: Number(b.price) || 0,
+        commissionUsd: Number((notice.match(/COMISION_USD:([\d.]+)/) || [])[1]) || 0,
+        paidOn: (notice.match(/COMISION_PAGADA:([\d-]+)/) || [])[1] || ''
+      })
+    }
+    if (page >= (Number(body.page_count) || 1)) break
+  }
+  return rows
+}
+
 // ─── ROUTES ────────────────────────────────────────────────────────────────────
 
 app.get('/api/health', (_, res) => {
@@ -572,6 +618,65 @@ app.get('/api/smoobu/apartments', requireAuth, async (_, res) => {
     const apts = await fetchSmoobuApartments()
     res.json({ apartments: apts.filter((a) => !isExcluded(a.name || a.title)).map((a) => ({ id: String(a.id), name: a.name || a.title || String(a.id) })) })
   } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// Public: is this broker code valid? (used by the ?b=CODE links)
+app.get('/api/brokers/:code', async (req, res) => {
+  const broker = await findBroker(req.params.code)
+  res.json(broker ? { valid: true, code: String(broker.code).toUpperCase(), name: broker.name } : { valid: false })
+})
+
+// Admin: brokers + their commission report built from Smoobu
+app.get('/api/admin/brokers', requireAuth, async (_, res) => {
+  const brokers = await readBrokers()
+  res.json({ brokers: brokers.map((b) => ({ code: String(b.code).toUpperCase(), name: b.name, rate: b.rate ?? 0.1, active: b.active !== false })), siteUrl: SITE_URL })
+})
+
+app.get('/api/admin/brokers/report', requireAuth, async (_, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    const rows = (await fetchBrokerBookings()).map((r) => ({
+      ...r,
+      status: r.paidOn ? 'pagada' : r.departure <= today ? 'por_pagar' : 'pendiente'
+    }))
+    rows.sort((a, b) => (b.arrival || '').localeCompare(a.arrival || ''))
+    const totals = {}
+    for (const r of rows) {
+      const t = totals[r.broker] || (totals[r.broker] = { porPagar: 0, pendiente: 0, pagada: 0 })
+      if (r.status === 'por_pagar') t.porPagar = round2(t.porPagar + r.commissionUsd)
+      else if (r.status === 'pendiente') t.pendiente = round2(t.pendiente + r.commissionUsd)
+      else t.pagada = round2(t.pagada + r.commissionUsd)
+    }
+    res.json({ rows, totals })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// Admin: mark one commission as paid (adds a tag to the reservation notes in Smoobu)
+app.post('/api/admin/brokers/pay', requireAuth, async (req, res) => {
+  try {
+    const id = String(req.body?.reservationId || '')
+    if (!id) return res.status(400).json({ message: 'Falta la reserva.' })
+    const current = await fetch(`https://login.smoobu.com/api/reservations/${id}`, { headers: smoobuHeaders() })
+    const booking = await current.json()
+    if (!current.ok) throw new Error(booking?.detail || 'No se encontró la reserva en Smoobu.')
+    const notice = String(booking.notice || '')
+    if (!/BROKER:/.test(notice)) return res.status(400).json({ message: 'Esa reserva no es de un broker.' })
+    if (/COMISION_PAGADA:/.test(notice)) return res.json({ ok: true, already: true })
+    const stamped = `${notice} · COMISION_PAGADA:${new Date().toISOString().slice(0, 10)}`
+    const update = await fetch(`https://login.smoobu.com/api/reservations/${id}`, {
+      method: 'PUT',
+      headers: smoobuHeaders(),
+      body: JSON.stringify({ notice: stamped })
+    })
+    if (!update.ok) throw new Error(`Smoobu no permitió actualizar la nota (${update.status}).`)
+    res.json({ ok: true })
+  } catch (err) {
+    console.error(err)
     res.status(500).json({ message: err.message })
   }
 })
@@ -762,8 +867,16 @@ app.post('/api/bookings/checkout', async (req, res) => {
         return res.status(502).json({ message: 'No pudimos iniciar el pago con Clip. Intenta de nuevo.' })
       }
 
+      const broker = await findBroker(req.body?.brokerCode)
+      const commissionRate = broker ? Number(broker.rate ?? 0.1) : 0
+      // Commission base: lodging after any stay discount (no cleaning fee, no IVA)
+      const commissionUsd = broker && known?.ok ? round2(known.lodging * commissionRate) : 0
+
       const pending = {
         bookingRef,
+        broker: broker ? String(broker.code).toUpperCase() : '',
+        commissionRate,
+        commissionUsd,
         paymentRequestId: clipData.payment_request_id,
         smoobuApartmentId: String(smoobuApartmentId || ''),
         propertyName,
@@ -879,7 +992,7 @@ app.post('/api/clip/webhook', async (req, res) => {
           adults: pending.guests,
           price: pending.totalUsd,
           currency: pending.currency,
-          note: `Reserva web arvacaciones.site · Pago Clip ${pending.bookingRef} · $${pending.amountMxn} MXN (TC ${pending.fxRate})`
+          note: `Reserva web arvacaciones.site · Pago Clip ${pending.bookingRef} · $${pending.amountMxn} MXN (TC ${pending.fxRate})${pending.broker ? ` · BROKER:${pending.broker} · COMISION_USD:${pending.commissionUsd}` : ''}`
         })
         console.log(`[Clip] Smoobu reservation created: ${reservation.id} (${pending.bookingRef})`)
       } catch (err) {

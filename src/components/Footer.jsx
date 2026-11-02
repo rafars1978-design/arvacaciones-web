@@ -11,6 +11,7 @@ function Footer() {
     { name: 'Propiedades', href: '#properties' },
     { name: 'Servicios', href: '#services' },
     { name: 'Contacto', href: '#contact' },
+    { name: 'Brokers', href: '#/brokers' },
     { name: 'Admin', href: '#/admin' }
   ]
 
