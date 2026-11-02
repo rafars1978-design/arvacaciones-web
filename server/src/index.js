@@ -4,6 +4,7 @@ import cors from 'cors'
 import jwt from 'jsonwebtoken'
 import fs from 'fs/promises'
 import path from 'path'
+import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 import Stripe from 'stripe'
 
@@ -14,6 +15,7 @@ const photosPath = path.join(__dirname, 'data', 'photos.json')
 const feesPath = path.join(__dirname, 'data', 'fees.json')
 const pendingPath = path.join(__dirname, 'data', 'pending-bookings.json')
 const brokersPath = path.join(__dirname, 'data', 'brokers.json')
+const brokerRegistryPath = path.join(__dirname, 'data', 'brokers-registry.json')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -457,11 +459,47 @@ loadPending()
 // Brokers live in data/brokers.json: [{ "code": "MARIA", "name": "Maria Lopez", "rate": 0.10, "active": true }]
 // A booking made through ?b=CODE is tagged in the Smoobu reservation notes, which is the source of
 // truth for the commission report (so nothing is lost if the server restarts).
+// Broker codes are signed, so they validate without any stored list: NAME-PERCENT-SIGNATURE,
+// e.g. MARIA_LOPEZ-10-7F3A9C. Re-creating a broker with the same name and percent always gives the same
+// code, so nothing breaks if the server's disk is wiped. To switch a code off, add it to the
+// BROKER_REVOKED environment variable (comma separated).
+const BROKER_SECRET = process.env.BROKER_SECRET || JWT_SECRET
+const brokerSlug = (name) => String(name || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 24)
+const brokerSig = (slug, pct) => crypto.createHmac('sha256', BROKER_SECRET).update(`${slug}|${pct}`).digest('hex').slice(0, 6).toUpperCase()
+const makeBrokerCode = (name, pct) => {
+  const slug = brokerSlug(name)
+  return `${slug}-${pct}-${brokerSig(slug, pct)}`
+}
+const niceName = (slug) => slug.toLowerCase().split('_').filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+const revokedCodes = () => String(process.env.BROKER_REVOKED || '').toUpperCase().split(',').map((x) => x.trim()).filter(Boolean)
+
+const parseBrokerCode = (code) => {
+  const wanted = String(code || '').trim().toUpperCase()
+  const m = /^([A-Z0-9_]{1,24})-(\d{1,2})-([A-F0-9]{6})$/.exec(wanted)
+  if (!m || revokedCodes().includes(wanted)) return null
+  const [, slug, pct, sig] = m
+  if (Number(pct) < 1 || brokerSig(slug, Number(pct)) !== sig) return null
+  return { code: wanted, slug, rate: Number(pct) / 100, name: niceName(slug) }
+}
+
+// Best-effort list of brokers created from the admin (names with accents, creation date).
+// The disk may be wiped by a restart; that only loses the display list, never a broker's link.
+const readRegistry = async () => JSON.parse(await fs.readFile(brokerRegistryPath, 'utf-8').catch(() => '[]'))
+const saveRegistry = async (list) => { try { await fs.writeFile(brokerRegistryPath, JSON.stringify(list, null, 1), 'utf-8') } catch { /* ephemeral disk */ } }
+
 const readBrokers = async () => JSON.parse(await fs.readFile(brokersPath, 'utf-8').catch(() => '[]'))
 const findBroker = async (code) => {
+  const signed = parseBrokerCode(code)
+  if (signed) {
+    const saved = (await readRegistry()).find((b) => b.code === signed.code)
+    return { ...signed, name: saved?.name || signed.name }
+  }
   const wanted = String(code || '').trim().toUpperCase()
-  if (!wanted) return null
-  return (await readBrokers()).find((b) => b.active !== false && String(b.code).toUpperCase() === wanted) || null
+  if (!wanted || revokedCodes().includes(wanted)) return null
+  const legacy = (await readBrokers()).find((b) => b.active !== false && String(b.code).toUpperCase() === wanted)
+  return legacy ? { code: wanted, name: legacy.name, rate: legacy.rate ?? 0.1 } : null
 }
 const round2 = (n) => Math.round(n * 100) / 100
 
@@ -630,8 +668,25 @@ app.get('/api/brokers/:code', async (req, res) => {
 
 // Admin: brokers + their commission report built from Smoobu
 app.get('/api/admin/brokers', requireAuth, async (_, res) => {
-  const brokers = await readBrokers()
-  res.json({ brokers: brokers.map((b) => ({ code: String(b.code).toUpperCase(), name: b.name, rate: b.rate ?? 0.1, active: b.active !== false })), siteUrl: SITE_URL })
+  const registry = await readRegistry()
+  const legacy = (await readBrokers()).map((b) => ({ code: String(b.code).toUpperCase(), name: b.name, rate: b.rate ?? 0.1 }))
+  const brokers = [...registry, ...legacy.filter((l) => !registry.some((r) => r.code === l.code))]
+  res.json({ brokers: brokers.map((b) => ({ code: b.code, name: b.name, rate: b.rate, active: !revokedCodes().includes(b.code) })), siteUrl: SITE_URL })
+})
+
+// Admin: register a broker -> returns the signed code and link to hand over
+app.post('/api/admin/brokers', requireAuth, async (req, res) => {
+  const name = String(req.body?.name || '').trim().slice(0, 60)
+  const percent = Math.round(Number(req.body?.percent ?? 10))
+  if (brokerSlug(name).length < 2) return res.status(400).json({ message: 'Escribe el nombre del broker (mínimo 2 letras).' })
+  if (!(percent >= 1 && percent <= 30)) return res.status(400).json({ message: 'La comisión debe estar entre 1% y 30%.' })
+  const code = makeBrokerCode(name, percent)
+  const registry = await readRegistry()
+  if (!registry.some((b) => b.code === code)) {
+    registry.push({ code, name, rate: percent / 100, createdAt: new Date().toISOString() })
+    await saveRegistry(registry)
+  }
+  res.status(201).json({ broker: { code, name, rate: percent / 100, active: true }, link: `${SITE_URL}/?b=${code}` })
 })
 
 app.get('/api/admin/brokers/report', requireAuth, async (_, res) => {
@@ -649,7 +704,12 @@ app.get('/api/admin/brokers/report', requireAuth, async (_, res) => {
       else if (r.status === 'pendiente') t.pendiente = round2(t.pendiente + r.commissionUsd)
       else t.pagada = round2(t.pagada + r.commissionUsd)
     }
-    res.json({ rows, totals })
+    const seen = [...new Set(rows.map((r) => r.broker))]
+    const brokers = seen.map((code) => {
+      const parsed = parseBrokerCode(code)
+      return { code, name: parsed?.name || code, rate: parsed?.rate ?? 0.1 }
+    })
+    res.json({ rows, totals, brokers })
   } catch (err) {
     console.error(err)
     res.status(500).json({ message: err.message })

@@ -50,6 +50,7 @@ export const api = {
     // Booking & Stripe
     getBroker: (code) => request(`/brokers/${encodeURIComponent(code)}`),
     getBrokers: (token) => request('/admin/brokers', { token }),
+    createBroker: (body, token) => request('/admin/brokers', { method: 'POST', body: JSON.stringify(body), token }),
     getBrokerReport: (token) => request('/admin/brokers/report', { token }),
     payBroker: (body, token) => request('/admin/brokers/pay', { method: 'POST', body: JSON.stringify(body), token }),
     getQuote: (body) => request('/quote', { method: 'POST', body: JSON.stringify(body) }),
