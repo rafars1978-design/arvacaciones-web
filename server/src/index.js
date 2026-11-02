@@ -802,7 +802,7 @@ app.get('/api/smoobu/debug/:id', requireAuth, async (req, res) => {
       fetchSmoobuRatesRange([id], from, to),
       fetch(`https://login.smoobu.com/api/reservations?apartmentId=${id}&from=${from}&to=${to}&showCancellation=false&pageSize=100`, { headers: smoobuHeaders() }).then((r) => r.json()).catch((e) => ({ error: e.message }))
     ])
-    const bookings = (resv.bookings || []).map((b) => ({ id: b.id, type: b.type, arrival: b.arrival, departure: b.departure, channel: b.channel?.name, apt: b.apartment?.id }))
+    const bookings = (resv.bookings || []).map((b) => ({ id: b.id, type: b.type, arrival: b.arrival, departure: b.departure, channel: b.channel?.name, apt: b.apartment?.id, hasNotice: 'notice' in b, notice: String(b.notice || '').slice(0, 120), guest: b['guest-name'] }))
     res.json({ detailName: detail.name, rates: range[id], bookings, bookingsRaw: resv.error ? resv : undefined })
   } catch (err) {
     res.status(500).json({ message: err.message })
