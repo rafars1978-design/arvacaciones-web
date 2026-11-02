@@ -69,7 +69,7 @@ function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-6">Ubicación</h4>
             <ul className="space-y-3">
-              <li><a href="#properties" className="text-white/70 hover:text-primary transition-colors flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />Playa del Carmen, Tulum y Mahahual</a></li>
+              <li><a href="#properties" className="text-white/70 hover:text-primary transition-colors flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />{t('Playa del Carmen, Tulum y Mahahual')}</a></li>
               <li><a href="#/admin" className="text-white/70 hover:text-primary transition-colors flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" />{t('Panel administrador')}</a></li>
             </ul>
           </div>
@@ -77,7 +77,7 @@ function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-6">{t('Contacto')}</h4>
             <ul className="space-y-4">
-              <li><a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-white/70 hover:text-white transition-colors"><MapPin className="w-5 h-5 text-primary mt-0.5" /><span>Playa del Carmen, Tulum y Mahahual<br />{t('Quintana Roo, México')}</span></a></li>
+              <li><a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-white/70 hover:text-white transition-colors"><MapPin className="w-5 h-5 text-primary mt-0.5" /><span>{t('Playa del Carmen, Tulum y Mahahual')}<br />{t('Quintana Roo, México')}</span></a></li>
               <li><a href="tel:+529843100691" className="flex items-center gap-3 text-white/70 hover:text-white transition-colors"><Phone className="w-5 h-5 text-primary" />+52 984 310 0691</a></li>
             </ul>
           </div>
