@@ -11,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const dataPath = path.join(__dirname, 'data', 'properties.json')
 const photosPath = path.join(__dirname, 'data', 'photos.json')
+const feesPath = path.join(__dirname, 'data', 'fees.json')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -126,27 +127,90 @@ const fetchSmoobuDetail = async (id) => {
 
 const isoDay = (d) => d.toISOString().slice(0, 10)
 
-// Lowest nightly rate over the next 60 days, per apartment id
-const fetchSmoobuRates = async (ids) => {
-  const start = new Date()
-  const end = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+const IVA_RATE = 0.16
+
+// Daily rates {price, min_length_of_stay, available} per apartment id for a date range
+const fetchSmoobuRatesRange = async (ids, startDate, endDate) => {
   const out = {}
   for (let i = 0; i < ids.length; i += 10) {
     const chunk = ids.slice(i, i + 10)
     const qs = chunk.map((id) => `apartments[]=${id}`).join('&')
     try {
-      const res = await fetch(`https://login.smoobu.com/api/rates?${qs}&start_date=${isoDay(start)}&end_date=${isoDay(end)}`, { headers: smoobuHeaders() })
-      if (!res.ok) continue
+      const res = await fetch(`https://login.smoobu.com/api/rates?${qs}&start_date=${startDate}&end_date=${endDate}`, { headers: smoobuHeaders() })
+      if (!res.ok) throw new Error(`rates ${res.status}`)
       const body = await res.json()
-      for (const id of chunk) {
-        const days = Object.values(body?.data?.[id] || {}).map((d) => Number(d?.price)).filter((n) => n > 0)
-        if (days.length) out[id] = Math.min(...days)
-      }
+      for (const id of chunk) out[id] = body?.data?.[id] || {}
     } catch (err) {
       console.error('Smoobu rates error:', err.message)
+      for (const id of chunk) out[id] = null
     }
   }
   return out
+}
+
+const addDays = (iso, n) => {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+// Summary for the catalogue: lowest nightly rate and shortest minimum stay over the next 60 days
+const fetchSmoobuRates = async (ids) => {
+  const today = new Date().toISOString().slice(0, 10)
+  const range = await fetchSmoobuRatesRange(ids, today, addDays(today, 60))
+  const out = {}
+  for (const id of ids) {
+    const days = Object.values(range[id] || {})
+    const prices = days.map((d) => Number(d?.price)).filter((n) => n > 0)
+    const stays = days.map((d) => Number(d?.min_length_of_stay)).filter((n) => n > 0)
+    if (prices.length) out[id] = { price: Math.min(...prices), minNights: stays.length ? Math.min(...stays) : 1 }
+  }
+  return out
+}
+
+const readFees = async () => JSON.parse(await fs.readFile(feesPath, 'utf-8').catch(() => '{}'))
+
+// Price a stay from Smoobu rates: nightly total + cleaning fee + 16% IVA
+const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate }) => {
+  const nights = Math.round((new Date(departureDate) - new Date(arrivalDate)) / 86400000)
+  if (!(nights >= 1)) return { ok: false, reason: 'dates', message: 'La fecha de salida debe ser posterior a la de llegada.' }
+  const id = String(smoobuApartmentId)
+  const [range, fees] = await Promise.all([
+    fetchSmoobuRatesRange([id], arrivalDate, addDays(departureDate, -1)),
+    readFees()
+  ])
+  const days = range[id]
+  if (!days) return { ok: false, reason: 'smoobu', message: 'No pudimos consultar Smoobu. Intenta de nuevo.' }
+
+  const nightly = []
+  for (let n = 0; n < nights; n++) {
+    const day = days[addDays(arrivalDate, n)]
+    if (!day || !(Number(day.price) > 0) || day.available === 0 || day.available === false) {
+      return { ok: false, reason: 'unavailable', message: 'Esas fechas no están disponibles.' }
+    }
+    nightly.push(Number(day.price))
+  }
+  const minNights = Number(days[arrivalDate]?.min_length_of_stay) || 1
+  if (nights < minNights) {
+    return { ok: false, reason: 'min_stay', minNights, message: `La estancia mínima para esas fechas es de ${minNights} noches.` }
+  }
+  const lodging = nightly.reduce((a, b) => a + b, 0)
+  const cleaning = Number(fees[id]) || 0
+  const subtotal = lodging + cleaning
+  const iva = Math.round(subtotal * IVA_RATE * 100) / 100
+  const total = Math.round((subtotal + iva) * 100) / 100
+  return {
+    ok: true,
+    nights,
+    minNights,
+    nightlyAvg: Math.round((lodging / nights) * 100) / 100,
+    lodging,
+    cleaning,
+    subtotal,
+    ivaRate: IVA_RATE,
+    iva,
+    total
+  }
 }
 
 const equipmentLabels = (equipments) => (Array.isArray(equipments) ? equipments : [])
@@ -162,6 +226,7 @@ const buildLiveProperties = async () => {
 
   const [apartments, local] = await Promise.all([fetchSmoobuApartments(), readProperties()])
   const photos = JSON.parse(await fs.readFile(photosPath, 'utf-8').catch(() => '{}'))
+  const fees = await readFees()
   const wanted = apartments.filter((a) => !isExcluded(a.name || a.title))
   const ids = wanted.map((a) => String(a.id))
 
@@ -179,7 +244,8 @@ const buildLiveProperties = async () => {
     const guests = Number(rooms.maxOccupancy) || 2
     const bedrooms = Number(rooms.bedrooms) || 1
     const bathrooms = Number(rooms.bathrooms) || 1
-    const price = rates[id] || Number(detail.price?.minimal) || 0
+    const price = rates[id]?.price || Number(detail.price?.minimal) || 0
+    const minNights = rates[id]?.minNights || 1
     const images = (apt.images || detail.images || []).map((img) => img.url || img).filter(Boolean)
     const hasCustomImage = override?.image && !override.image.includes('unsplash')
     const curated = photos[id]
@@ -191,6 +257,9 @@ const buildLiveProperties = async () => {
       location: (detail.location?.city || override?.location || 'Playa del Carmen').toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()),
       price,
       currency: detail.currency || 'MXN',
+      minNights,
+      cleaningFee: Number(fees[id]) || 0,
+      ivaRate: IVA_RATE,
       rating: override?.rating || 0,
       reviews: override?.reviews || 0,
       guests,
@@ -423,7 +492,7 @@ app.get('/api/integration/smoobu/status', (_, res) => {
   })
 })
 
-// Availability search
+// Availability search (Smoobu daily rates: availability + minimum stay per season)
 app.post('/api/search/availability', async (req, res) => {
   try {
     const { arrivalDate, departureDate, guests } = req.body || {}
@@ -431,39 +500,59 @@ app.post('/api/search/availability', async (req, res) => {
       return res.status(400).json({ message: 'arrivalDate y departureDate son obligatorios.' })
     }
 
-    const properties = useMock
-      ? (await readProperties()).filter((p) => p.active)
-      : await buildLiveProperties()
-
     if (useMock) {
+      const properties = (await readProperties()).filter((p) => p.active)
       const availableProperties = properties
         .filter((_, index) => index % 4 !== 3)
         .map((p) => ({ id: p.id, price: p.price + Number(guests || 1) * 10 }))
       return res.json({ source: 'demo', availableProperties })
     }
 
-    const mapped = properties.filter((p) => p.smoobuApartmentId)
-    if (!mapped.length) return res.json({ source: 'smoobu', availableProperties: [] })
-
-    const availability = await fetchSmoobuAvailability({
-      arrivalDate,
-      departureDate,
-      guests,
-      apartments: mapped.map((p) => Number(p.smoobuApartmentId))
-    })
-
-    const availableProperties = mapped
-      .filter((p) => availability.availableApartments?.includes(Number(p.smoobuApartmentId)))
-      .map((p) => ({
+    const properties = (await buildLiveProperties()).filter((p) => p.guests >= Number(guests || 1))
+    const quotes = await Promise.all(properties.map(async (p) => {
+      try { return [p, await computeQuote({ smoobuApartmentId: p.smoobuApartmentId, arrivalDate, departureDate })] } catch { return [p, { ok: false }] }
+    }))
+    const availableProperties = quotes
+      .filter(([, q]) => q.ok)
+      .map(([p, q]) => ({
         id: p.id,
         smoobuApartmentId: p.smoobuApartmentId,
-        price: availability.prices?.[p.smoobuApartmentId]?.price || p.price,
-        currency: availability.prices?.[p.smoobuApartmentId]?.currency || 'USD'
+        price: q.nightlyAvg,
+        currency: p.currency,
+        minNights: q.minNights,
+        total: q.total
       }))
-
     res.json({ source: 'smoobu', availableProperties })
   } catch (err) {
     console.error(err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// Price quote for one stay (nightly rates + cleaning + 16% IVA)
+app.post('/api/quote', async (req, res) => {
+  try {
+    const { smoobuApartmentId, arrivalDate, departureDate } = req.body || {}
+    if (!smoobuApartmentId || !arrivalDate || !departureDate) {
+      return res.status(400).json({ ok: false, message: 'Faltan datos para cotizar.' })
+    }
+    const known = (await buildLiveProperties()).find((p) => p.smoobuApartmentId === String(smoobuApartmentId))
+    if (!known) return res.status(404).json({ ok: false, message: 'Propiedad no encontrada.' })
+    res.json({ ...(await computeQuote({ smoobuApartmentId, arrivalDate, departureDate })), currency: known.currency })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ ok: false, message: 'No pudimos calcular la cotización.' })
+  }
+})
+
+// Admin: raw Smoobu data for one apartment (to check which fields Smoobu exposes)
+app.get('/api/smoobu/debug/:id', requireAuth, async (req, res) => {
+  try {
+    const id = String(req.params.id)
+    const today = new Date().toISOString().slice(0, 10)
+    const [detail, range] = await Promise.all([fetchSmoobuDetail(id), fetchSmoobuRatesRange([id], today, addDays(today, 5))])
+    res.json({ detail, rates: range[id] })
+  } catch (err) {
     res.status(500).json({ message: err.message })
   }
 })
@@ -490,6 +579,13 @@ app.post('/api/bookings/checkout', async (req, res) => {
       return res.status(400).json({ message: 'Faltan campos requeridos para la reserva.' })
     }
 
+    // Never trust the browser's total: re-price the stay from Smoobu rates
+    const known = !useMock && smoobuApartmentId
+      ? await computeQuote({ smoobuApartmentId, arrivalDate, departureDate })
+      : null
+    if (known && !known.ok) return res.status(409).json({ message: known.message })
+    const chargeTotal = known?.ok ? known.total : totalPrice
+
     // Mock mode: return a fake session URL for testing
     if (!stripe) {
       const mockUrl = `${CLIENT_ORIGIN}/#/booking/success?mock=1&property=${encodeURIComponent(propertyName || propertyId)}&arrival=${arrivalDate}&departure=${departureDate}&email=${encodeURIComponent(email)}`
@@ -512,7 +608,7 @@ app.post('/api/bookings/checkout', async (req, res) => {
               name: `${propertyName || 'Propiedad'} — ${nights} noche${nights !== 1 ? 's' : ''}`,
               description: `Llegada: ${arrivalDate} | Salida: ${departureDate} | Huéspedes: ${guests || 1}`
             },
-            unit_amount: Math.round((totalPrice || 100) * 100) // totalPrice is the total in dollars
+            unit_amount: Math.round((chargeTotal || 100) * 100) // total in dollars incl. cleaning and IVA
           },
           quantity: 1
         }
@@ -529,7 +625,7 @@ app.post('/api/bookings/checkout', async (req, res) => {
         email,
         phone: phone || '',
         adults: String(guests || 1),
-        totalPrice: String(totalPrice || 0),
+        totalPrice: String(chargeTotal || 0),
         currency: currency || 'USD'
       }
     })
