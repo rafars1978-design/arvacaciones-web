@@ -30,7 +30,7 @@ function Footer() {
               <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center"><span className="font-display text-2xl font-bold text-white">AR</span></div>
               <div><span className="font-display text-xl font-semibold block">AR Vacaciones</span><span className="text-xs tracking-[0.2em] uppercase text-white/60">Playa del Carmen</span></div>
             </div>
-            <p className="text-white/70 leading-relaxed mb-6">Tu socio confiable en experiencias de hospedaje bien presentadas y con operación lista para crecer.</p>
+            <p className="text-white/70 leading-relaxed mb-6">Departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual. Reserva directo, con disponibilidad y precios en tiempo real.</p>
             <div className="flex gap-3">
               {[
                 { href: 'https://instagram.com', icon: <Instagram className="w-5 h-5" />, hover: 'hover:bg-primary' },
@@ -54,7 +54,7 @@ function Footer() {
             <div className="mt-8">
               <h5 className="font-medium text-sm text-white/60 mb-3">También en:</h5>
               <div className="flex flex-wrap gap-2">
-                {['Airbnb', 'Booking', 'VRBO', 'Sitio Directo'].map((platform) => (
+                {['Airbnb', 'Booking'].map((platform) => (
                   <a key={platform} href="#" className="text-xs px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors flex items-center gap-1">
                     {platform}<ExternalLink className="w-3 h-3" />
                   </a>
@@ -66,7 +66,7 @@ function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-6">Ubicación</h4>
             <ul className="space-y-3">
-              <li><a href="#properties" className="text-white/70 hover:text-primary transition-colors flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />Playa del Carmen</a></li>
+              <li><a href="#properties" className="text-white/70 hover:text-primary transition-colors flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />Playa del Carmen, Tulum y Mahahual</a></li>
               <li><a href="#/admin" className="text-white/70 hover:text-primary transition-colors flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" />Panel administrador</a></li>
             </ul>
           </div>
@@ -74,8 +74,8 @@ function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-6">Contacto</h4>
             <ul className="space-y-4">
-              <li><a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-white/70 hover:text-white transition-colors"><MapPin className="w-5 h-5 text-primary mt-0.5" /><span>Playa del Carmen<br />Quintana Roo, México</span></a></li>
-              <li><a href="tel:+529831304797" className="flex items-center gap-3 text-white/70 hover:text-white transition-colors"><Phone className="w-5 h-5 text-primary" />+52 983 130 4797</a></li>
+              <li><a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-white/70 hover:text-white transition-colors"><MapPin className="w-5 h-5 text-primary mt-0.5" /><span>Playa del Carmen, Tulum y Mahahual<br />Quintana Roo, México</span></a></li>
+              <li><a href="tel:+529843100691" className="flex items-center gap-3 text-white/70 hover:text-white transition-colors"><Phone className="w-5 h-5 text-primary" />+52 984 310 0691</a></li>
             </ul>
           </div>
         </div>

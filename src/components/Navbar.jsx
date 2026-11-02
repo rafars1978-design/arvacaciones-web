@@ -99,10 +99,10 @@ function Navbar() {
 
           <div className="hidden lg:flex items-center gap-3">
             <a
-              href="tel:+529831304797"
+              href="tel:+529843100691"
               className={`flex items-center gap-1.5 text-sm transition-colors ${solid ? 'text-foreground/70 hover:text-primary' : 'text-white/80 hover:text-white'}`}
             >
-              <Phone className="w-4 h-4" /> +52 983 130 4797
+              <Phone className="w-4 h-4" /> +52 984 310 0691
             </a>
             <a
               href="#properties"
@@ -148,7 +148,7 @@ function Navbar() {
                 rel="noopener noreferrer"
                 className="block text-foreground hover:text-primary py-2.5 font-medium"
               >
-                WhatsApp +52 983 130 4797
+                WhatsApp +52 984 310 0691
               </a>
               <a
                 href="#properties"

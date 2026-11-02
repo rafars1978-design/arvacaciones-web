@@ -186,7 +186,7 @@ function AdminPage() {
           </div>
 
           <p className="text-muted mb-6">
-            Conservamos el diseño público y aquí controlas propiedades, galerías y el vínculo futuro con Smoobu.
+            Aquí controlas qué propiedades se publican, sus galerías y su vínculo con el sistema de reservas.
           </p>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -230,7 +230,7 @@ function AdminPage() {
             <p className="text-sm uppercase tracking-[0.25em] text-primary font-semibold">Panel operativo</p>
             <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground">Administrador de propiedades</h1>
             <p className="text-muted mt-3 max-w-3xl">
-              Aquí das de alta propiedades, actualizas imágenes, activas o desactivas visibilidad y preparas el mapeo con Smoobu sin tocar el diseño principal del sitio.
+              Aquí das de alta propiedades, actualizas imágenes, activas o desactivas visibilidad y controlas el vínculo con el sistema de reservas sin tocar el diseño del sitio.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -246,7 +246,7 @@ function AdminPage() {
         {status && (
           <div className="grid md:grid-cols-3 gap-4">
             <div className="rounded-3xl bg-white border border-border p-6">
-              <p className="text-sm text-muted mb-2">Estado Smoobu</p>
+              <p className="text-sm text-muted mb-2">Estado del sistema</p>
               <p className="text-2xl font-semibold text-foreground">{status.connected ? 'Conectado' : 'Modo demo'}</p>
               <p className="text-sm text-muted mt-2">{status.message}</p>
             </div>
@@ -256,7 +256,7 @@ function AdminPage() {
               <p className="text-sm text-muted mt-2">Se muestran en la home pública.</p>
             </div>
             <div className="rounded-3xl bg-white border border-border p-6">
-              <p className="text-sm text-muted mb-2">Mapeadas con Smoobu</p>
+              <p className="text-sm text-muted mb-2">Vinculadas al sistema</p>
               <p className="text-2xl font-semibold text-foreground">{properties.filter((item) => item.smoobuApartmentId).length}</p>
               <p className="text-sm text-muted mt-2">Listas para sincronizar disponibilidad y precio.</p>
             </div>

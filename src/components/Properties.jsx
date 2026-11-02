@@ -69,11 +69,11 @@ function Properties() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="font-display text-4xl md:text-5xl font-bold text-foreground"
             >
-              Propiedades en <span className="text-primary">Playa del Carmen</span>
+              Nuestras <span className="text-primary">Propiedades</span>
             </motion.h2>
 
             <p className="text-muted mt-4 max-w-2xl">
-              Elige tu alojamiento ideal. Consulta disponibilidad y reserva directamente con pago seguro.
+              Departamentos y estudios en Playa del Carmen, Tulum y Mahahual. Elige el tuyo, consulta fechas y reserva directo con pago seguro.
             </p>
           </div>
 
@@ -97,7 +97,7 @@ function Properties() {
             <div>
               <p className="font-semibold text-foreground">Resultado de búsqueda</p>
               <p className="text-sm text-muted">
-                Fuente: {availability.source === 'smoobu' ? 'Smoobu' : 'demo'} · {availability.availableProperties?.length || 0} opciones disponibles.
+                Disponibilidad en tiempo real · {availability.availableProperties?.length || 0} opciones disponibles.
               </p>
             </div>
             <button onClick={() => setAvailability(null)} className="self-start md:self-auto text-sm font-medium text-primary hover:underline">

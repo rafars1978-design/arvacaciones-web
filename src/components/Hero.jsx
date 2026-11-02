@@ -45,13 +45,12 @@ function Hero() {
       setFeedback({ type: '', text: '' })
       const result = await api.searchAvailability(search)
       const availableCount = result.availableProperties?.length || 0
-      const modeText = result.source === 'smoobu' ? 'datos reales desde Smoobu' : 'modo demo listo para sincronizar'
-
+      
       setFeedback({
         type: 'success',
         text: availableCount > 0
-          ? `${availableCount} opciones encontradas con ${modeText}. Mira las propiedades abajo.`
-          : `No encontramos disponibilidad para esas fechas en ${modeText}.`
+          ? `${availableCount} opciones disponibles para esas fechas. Mira las propiedades abajo.`
+          : 'No encontramos disponibilidad para esas fechas. Prueba con otras fechas o escríbenos por WhatsApp.'
       })
 
       window.dispatchEvent(new CustomEvent('arv:availability-results', { detail: result }))
@@ -92,7 +91,7 @@ function Hero() {
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-white text-sm font-medium">
                 <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                Propiedades en Playa del Carmen
+                Playa del Carmen · Tulum · Mahahual
               </span>
             </motion.div>
 
@@ -113,8 +112,8 @@ function Hero() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-white/80 text-lg md:text-xl max-w-2xl mx-auto mb-10"
             >
-              Descubre propiedades exclusivas en Playa del Carmen.
-              Servicio personalizado, disponibilidad conectable a Smoobu y una experiencia cuidada de principio a fin.
+              Departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual.
+              Reserva directo, con disponibilidad y precios en tiempo real.
             </motion.p>
 
             <motion.div
@@ -124,7 +123,7 @@ function Hero() {
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <motion.a
-                href="#contact"
+                href="#properties"
                 className="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-2xl hover:shadow-primary/30 flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

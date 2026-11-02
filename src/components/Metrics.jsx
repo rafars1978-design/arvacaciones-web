@@ -32,31 +32,24 @@ function Metrics() {
   const metrics = [
     {
       icon: Users,
-      value: 500,
-      suffix: '+',
-      label: 'Huéspedes Felices',
-      description: 'Viajeros satisfechos de todo el mundo'
+      value: 22,
+      suffix: '',
+      label: 'Propiedades',
+      description: 'Departamentos y estudios listos para reservar'
     },
     {
       icon: Home,
-      value: 50,
-      suffix: '+',
-      label: 'Propiedades Premium',
-      description: 'Curadas para experiencias únicas'
+      value: 3,
+      suffix: '',
+      label: 'Destinos',
+      description: 'Playa del Carmen, Tulum y Mahahual'
     },
     {
       icon: MapPin,
-      value: 5,
-      suffix: '+',
-      label: 'Destinos Exclusivos',
-      description: 'En el Caribe y más allá'
-    },
-    {
-      icon: TrendingUp,
-      value: 98,
-      suffix: '%',
-      label: 'Ocupación Promedio',
-      description: 'Propiedades altamente demandadas'
+      value: 24,
+      suffix: '/7',
+      label: 'Atención',
+      description: 'Por WhatsApp, antes y durante tu estancia'
     }
   ]
 
@@ -96,7 +89,7 @@ function Metrics() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {metrics.map((metric, index) => (
             <motion.div
               key={metric.label}
@@ -128,35 +121,6 @@ function Metrics() {
           ))}
         </div>
 
-        {/* Trust Badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="mt-20 pt-12 border-t border-white/10"
-        >
-          <div className="flex flex-wrap justify-center items-center gap-8">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-1">4.9★</div>
-              <p className="text-white/60 text-sm">Google Reviews</p>
-            </div>
-            <div className="w-px h-12 bg-white/20 hidden md:block" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-1">Superhost</div>
-              <p className="text-white/60 text-sm">Airbnb Status</p>
-            </div>
-            <div className="w-px h-12 bg-white/20 hidden md:block" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-1">Premier</div>
-              <p className="text-white/60 text-sm">Booking.com Partner</p>
-            </div>
-            <div className="w-px h-12 bg-white/20 hidden md:block" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-1">Elite</div>
-              <p className="text-white/60 text-sm">VRBO Recognition</p>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   )

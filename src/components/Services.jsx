@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Sparkles, Key, Phone, Waves, Sun, Wifi, Shield, Utensils } from 'lucide-react'
+import { Sparkles, Key, Phone, Waves, Sun, Wifi, Shield, MapPin } from 'lucide-react'
 
 function Services() {
   const ref = useRef(null)
@@ -9,43 +9,43 @@ function Services() {
   const services = [
     {
       icon: Sparkles,
-      title: 'Limpieza Premium',
-      description: 'Servicio de limpieza profesional con productos de alta gama y atención al detalle'
+      title: 'Limpieza Profesional',
+      description: 'Tu estancia empieza con el departamento limpio y listo. La limpieza final está incluida en el precio'
     },
     {
       icon: Key,
-      title: 'Check-in Automático',
-      description: 'Acceso sin contacto las 24 horas con cerraduras inteligentes y códigos personalizados'
+      title: 'Check-in Fácil',
+      description: 'Te enviamos las instrucciones de llegada con tiempo para que entres sin complicaciones'
     },
     {
       icon: Phone,
-      title: 'Concierge 24/7',
-      description: 'Asistencia personal para reservaciones, tours y cualquier necesidad durante tu estancia'
+      title: 'Atención por WhatsApp',
+      description: 'Resolvemos tus dudas antes de reservar y durante tu estancia, directo por WhatsApp'
     },
     {
       icon: Waves,
-      title: 'Alberca Privada',
-      description: 'Propiedades con piscinas exclusivas y acceso a clubes de playa premium'
+      title: 'Albercas y Amenidades',
+      description: 'Albercas, gimnasio y áreas comunes en la mayoría de nuestros edificios; algunas con alberca privada'
     },
     {
       icon: Sun,
       title: 'Rooftop & Terraza',
-      description: 'Espacios al aire libre con vistas espectaculares y áreas de descanso'
+      description: 'Terrazas y rooftops con vista para descansar al aire libre'
     },
     {
       icon: Wifi,
-      title: 'WiFi Premium',
-      description: 'Conexión de alta velocidad ideal para trabajo remoto y streaming'
+      title: 'WiFi',
+      description: 'Internet en todas las propiedades, para trabajar o ver tus series'
     },
     {
       icon: Shield,
-      title: 'Seguridad Total',
-      description: 'Vigilancia 24/7, acceso controlado y seguros de protección incluidos'
+      title: 'Reserva Directa Segura',
+      description: 'Pagas en línea con Clip y recibes la confirmación de tu reserva por correo'
     },
     {
-      icon: Utensils,
-      title: 'Chef Privado',
-      description: 'Servicio opcional de chef personal con menús personalizados'
+      icon: MapPin,
+      title: 'Ubicación',
+      description: 'Playa del Carmen cerca de la 5ª Avenida y la playa, además de Tulum y Mahahual'
     }
   ]
 
@@ -76,7 +76,7 @@ function Services() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6"
           >
-            Servicios de <span className="text-primary">Clase Mundial</span>
+            Todo lo que <span className="text-primary">Incluye tu Estancia</span>
           </motion.h2>
 
           <motion.p
@@ -85,8 +85,8 @@ function Services() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-muted text-lg"
           >
-            Cada detalle está cuidadosamente diseñado para ofrecerte una experiencia
-            de hospedaje excepcional, combinando comodidad, lujo y tranquilidad.
+            Pensamos en los detalles para que solo te preocupes de disfrutar:
+            comodidad, buena ubicación y atención directa de nuestro equipo.
           </motion.p>
         </div>
 

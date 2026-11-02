@@ -13,32 +13,32 @@ function Testimonials() {
       location: 'New York, USA',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop',
       rating: 5,
-      text: 'Absolutely stunning property! The villa exceeded all our expectations. The concierge service was impeccable, and the location was perfect. We\'ll definitely be back!',
-      property: 'Villa Oceanfront Paradise'
+      text: 'Absolutely stunning apartment! It exceeded all our expectations. The team was impeccable, and the location was perfect. We\'ll definitely be back!',
+      property: 'QUADRA CHIKIN 104'
     },
     {
       name: 'Carlos Rodríguez',
       location: 'Madrid, España',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
       rating: 5,
-      text: 'Una experiencia inolvidable. El penthouse en Tulum fue perfecto para nuestra luna de miel. Atención al detalle increíble y vistas espectaculares.',
-      property: 'Penthouse Tulum Beach'
+      text: 'Una experiencia inolvidable. El departamento en Tulum fue perfecto para nuestra luna de miel. Atención al detalle increíble y mucha tranquilidad.',
+      property: 'Ki Tulum'
     },
     {
       name: 'Emma Thompson',
       location: 'London, UK',
       avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop',
       rating: 5,
-      text: 'The most luxurious vacation rental we\'ve ever experienced. Everything was perfect from booking to checkout. The private beach access was incredible.',
-      property: 'Casa del Mar Premium'
+      text: 'One of the best vacation rentals we\'ve ever stayed in. Everything was perfect from booking to checkout, and the beach club access was incredible.',
+      property: 'ELEMENTS 123'
     },
     {
       name: 'James Wilson',
       location: 'Toronto, Canada',
       avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop',
       rating: 5,
-      text: 'World-class service and amenities. The property manager was incredibly responsive. The pool and rooftop views were breathtaking. Highly recommend!',
-      property: 'Luxury Suite Caribbean'
+      text: 'Great service and amenities. The host was incredibly responsive. The pool and rooftop views were breathtaking. Highly recommend!',
+      property: 'THE SHORE 215 A'
     }
   ]
 
@@ -173,28 +173,6 @@ function Testimonials() {
           </motion.div>
         </div>
 
-        {/* Additional Reviews */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-16 grid md:grid-cols-3 gap-6"
-        >
-          {[
-            { platform: 'Airbnb', rating: '4.97', reviews: '234' },
-            { platform: 'Google', rating: '4.9', reviews: '189' },
-            { platform: 'Booking', rating: '9.4', reviews: '156' }
-          ].map((item) => (
-            <div key={item.platform} className="bg-surface rounded-2xl p-6 text-center hover:shadow-lg transition-shadow">
-              <h4 className="font-semibold text-foreground mb-2">{item.platform}</h4>
-              <div className="flex items-center justify-center gap-2">
-                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                <span className="text-2xl font-bold text-foreground">{item.rating}</span>
-              </div>
-              <p className="text-muted text-sm mt-1">{item.reviews} reseñas</p>
-            </div>
-          ))}
-        </motion.div>
       </div>
     </section>
   )

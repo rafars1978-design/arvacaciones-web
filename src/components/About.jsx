@@ -12,22 +12,22 @@ function About() {
     {
       icon: Award,
       title: 'Excelencia',
-      description: 'Propiedades seleccionadas rigurosamente para garantizar calidad excepcional'
+      description: 'Departamentos y estudios cuidados, con fotos reales y descripciones claras'
     },
     {
       icon: Globe,
-      title: 'Internacional',
-      description: 'Presencia global con clientes de más de 50 países diferentes'
+      title: 'Huéspedes del mundo',
+      description: 'Te atendemos en español e inglés, antes, durante y después de tu estancia'
     },
     {
       icon: Shield,
       title: 'Confianza',
-      description: 'Transacciones seguras y servicio transparente en todo momento'
+      description: 'Pago en línea seguro y precios claros: hospedaje, limpieza e IVA desde el principio'
     },
     {
       icon: Heart,
       title: 'Experiencia',
-      description: 'Cada estancia diseñada para crear recuerdos inolvidables'
+      description: 'Cerca de la playa y de la 5ª Avenida, con albercas, rooftops y todo lo que necesitas'
     }
   ]
 
@@ -59,7 +59,7 @@ function About() {
               className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight"
             >
               Tu Socio en
-              <span className="text-gradient"> Experiencias de Lujo</span>
+              <span className="text-gradient"> Estancias que Valen la Pena</span>
             </motion.h2>
 
             <motion.p
@@ -68,7 +68,7 @@ function About() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-muted text-lg leading-relaxed mb-8"
             >
-              Somos una empresa líder en gestión de propiedades vacacionales de alto nivel en Playa del Carmen. Con años de experiencia y un compromiso inquebrantable con la excelencia, transformamos cada estancia en una experiencia memorable.
+              Administramos departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual. Cuidamos cada propiedad para que llegues y todo esté listo: limpia, equipada y bien ubicada.
             </motion.p>
 
             <motion.p
@@ -77,7 +77,7 @@ function About() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-muted text-lg leading-relaxed mb-10"
             >
-              Nuestro equipo de profesionales se dedica a ofrecer un servicio personalizado que supera las expectativas, desde la reserva hasta el checkout, asegurando que cada momento de tu viaje sea perfecto.
+              Reservas directo con nosotros, sin intermediarios, y te acompañamos por WhatsApp desde la reserva hasta el check-out.
             </motion.p>
 
             <motion.div
@@ -132,9 +132,9 @@ function About() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="mt-20 pt-12 border-t border-border"
         >
-          <p className="text-center text-muted mb-8">Integraciones y Alianzas</p>
+          <p className="text-center text-muted mb-8">También nos encuentras en</p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
-            {['Airbnb', 'Booking.com', 'VRBO', 'Expedia', 'TripAdvisor'].map((partner) => (
+            {['Airbnb', 'Booking.com'].map((partner) => (
               <span key={partner} className="text-xl font-semibold text-foreground/50">{partner}</span>
             ))}
           </div>
