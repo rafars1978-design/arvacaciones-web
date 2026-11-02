@@ -45,9 +45,13 @@ function Properties() {
     setFavorites((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id])
   }
 
-  const visibleProperties = availability?.availableProperties?.length
-    ? properties.filter((property) => availability.availableProperties.some((item) => item.id === property.id))
+  const visibleProperties = availability
+    ? properties.filter((property) => availability.availableProperties?.some((item) => item.id === property.id))
     : properties
+
+  const searchNights = availability?.search?.arrivalDate && availability?.search?.departureDate
+    ? Math.max(1, Math.round((new Date(availability.search.departureDate) - new Date(availability.search.arrivalDate)) / 86400000))
+    : 0
 
   return (
     <section id="properties" ref={ref} className="py-24 md:py-32 bg-beige">
@@ -166,11 +170,24 @@ function Properties() {
 
                     {displayPrice > 0 && (
                       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl pointer-events-none">
-                        <span className="text-2xl font-bold text-foreground">${Math.round(displayPrice)}</span>
-                        {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
-                        <span className="text-muted text-sm"> / noche + IVA</span>
-                        {(availabilityMatch?.minNights || property.minNights) > 1 && (
-                          <div className="text-[11px] text-muted leading-tight">Mín. {availabilityMatch?.minNights || property.minNights} noches</div>
+                        {availabilityMatch?.total > 0 && searchNights > 0 ? (
+                          <>
+                            <span className="text-2xl font-bold text-foreground">${Math.round(availabilityMatch.total).toLocaleString('en-US')}</span>
+                            {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
+                            <span className="text-muted text-sm"> total</span>
+                            <div className="text-[11px] text-muted leading-tight">
+                              {searchNights} noche{searchNights !== 1 ? 's' : ''} · ${Math.round(displayPrice)} / noche
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-2xl font-bold text-foreground">${Math.round(displayPrice)}</span>
+                            {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
+                            <span className="text-muted text-sm"> / noche</span>
+                            {(availabilityMatch?.minNights || property.minNights) > 1 && (
+                              <div className="text-[11px] text-muted leading-tight">Mín. {availabilityMatch?.minNights || property.minNights} noches</div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

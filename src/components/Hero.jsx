@@ -53,7 +53,7 @@ function Hero() {
           : 'No encontramos disponibilidad para esas fechas. Prueba con otras fechas o escríbenos por WhatsApp.'
       })
 
-      window.dispatchEvent(new CustomEvent('arv:availability-results', { detail: result }))
+      window.dispatchEvent(new CustomEvent('arv:availability-results', { detail: { ...result, search: { ...search } } }))
       document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' })
     } catch (error) {
       setFeedback({ type: 'error', text: error.message })

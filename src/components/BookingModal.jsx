@@ -7,10 +7,11 @@ function BookingModal({ property, availability, onClose }) {
   const today = new Date().toISOString().split('T')[0]
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
+  const searched = availability?.search
   const [form, setForm] = useState({
-    arrivalDate: tomorrow,
-    departureDate: new Date(Date.now() + (1 + Math.max(1, property.minNights || 1)) * 86400000).toISOString().split("T")[0],
-    guests: 1,
+    arrivalDate: searched?.arrivalDate || tomorrow,
+    departureDate: searched?.departureDate || new Date(Date.now() + (1 + Math.max(1, property.minNights || 1)) * 86400000).toISOString().split("T")[0],
+    guests: Math.min(Number(searched?.guests) || 1, property.guests || 8),
     firstName: '',
     lastName: '',
     email: '',
@@ -321,6 +322,11 @@ function BookingModal({ property, availability, onClose }) {
 
               <p className="text-center text-xs text-muted">
                 Pago seguro con Clip · Tarjeta de crédito o débito
+              </p>
+              <p className="text-center text-xs text-muted">
+                <strong>Tarifa no reembolsable.</strong> Al continuar aceptas los{' '}
+                <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="underline">Términos</a> y la{' '}
+                <a href="#/cancelacion" target="_blank" rel="noopener noreferrer" className="underline">Política de Cancelación</a>.
               </p>
             </form>
           </div>

@@ -25,7 +25,7 @@ const PAGES = {
         'Debes respetar el reglamento del edificio o condominio, las áreas comunes y a los vecinos. Eres responsable de los daños causados a la propiedad o a sus áreas comunes durante tu estancia.',
         'Las instrucciones de llegada y salida te llegan antes de tu estancia.'
       ]],
-      ['Cancelaciones y cambios', ['Consulta nuestra Política de Cancelación.']],
+      ['Cancelaciones y cambios', ['Todas las reservas se hacen con tarifa no reembolsable. Consulta nuestra Política de Cancelación.']],
       ['Responsabilidad', ['Nos esforzamos por que la información del sitio (fotos, descripciones, amenidades) sea exacta. No somos responsables por eventos fuera de nuestro control, como fenómenos naturales, cortes de servicios públicos o del edificio, ni por objetos olvidados o perdidos.']],
       ['Ley aplicable', ['Estos términos se rigen por las leyes aplicables en los Estados Unidos Mexicanos.']],
       ['Contacto', ['Para cualquier duda escríbenos por WhatsApp o llámanos al +52 984 310 0691.']]
@@ -45,14 +45,12 @@ const PAGES = {
   cancelacion: {
     title: 'Política de Cancelación',
     sections: [
-      ['Cómo cancelar o cambiar tu reserva', [
-        'Escríbenos por WhatsApp al +52 984 310 0691 lo antes posible, con tu nombre y la referencia de tu reserva (comienza con ARV-). Entre más anticipación, más opciones tenemos para ayudarte.'
+      ['Tarifa no reembolsable', [
+        'Todas las reservas hechas en este sitio se realizan con tarifa no reembolsable. Una vez confirmado el pago, no se hacen reembolsos por cancelación, salida anticipada o no presentación.',
+        'Antes de pagar, revisa con cuidado las fechas, la propiedad y el número de huéspedes.'
       ]],
-      ['Reembolsos', [
-        'Revisamos cada solicitud según la propiedad, las fechas y la anticipación con que la recibimos, y te confirmamos por escrito si aplica un reembolso y de cuánto.',
-        'Los reembolsos se hacen por el mismo medio de pago. El cobro se hizo en pesos mexicanos, por lo que el monto reembolsado se calcula en pesos y puede tardar en reflejarse según tu banco.'
-      ]],
-      ['Salida anticipada y no presentación', ['Si te vas antes de la fecha reservada o no te presentas, no se reembolsan las noches no utilizadas, salvo que lo acordemos por escrito.']]
+      ['Cambios de fechas', ['Si necesitas modificar tu reserva, escríbenos por WhatsApp al +52 984 310 0691 con tu nombre y la referencia de tu reserva (comienza con ARV-). Cualquier cambio queda sujeto a disponibilidad y a nuestra aprobación.']],
+      ['Casos especiales', ['Si por causa nuestra no podemos darte el alojamiento reservado, te ofreceremos una alternativa equivalente o la devolución de lo pagado.']]
     ]
   },
   'aviso-legal': {
