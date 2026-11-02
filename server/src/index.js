@@ -666,6 +666,45 @@ app.get('/api/brokers/:code', async (req, res) => {
   res.json(broker ? { valid: true, code: String(broker.code).toUpperCase(), name: broker.name } : { valid: false })
 })
 
+// Admin: what the public site shows today (live from Smoobu) and why anything is hidden
+app.get('/api/admin/catalog', requireAuth, async (req, res) => {
+  try {
+    if (req.query.refresh) liveCache = { at: 0, list: null }
+    const [apartments, live, photos, fees] = await Promise.all([
+      fetchSmoobuApartments(),
+      buildLiveProperties(),
+      fs.readFile(photosPath, 'utf-8').then(JSON.parse).catch(() => ({})),
+      readFees()
+    ])
+    const items = apartments.map((a) => {
+      const id = String(a.id)
+      const name = a.name || a.title || id
+      const p = live.find((x) => x.smoobuApartmentId === id)
+      let reason = ''
+      if (!p) reason = isExcluded(name) ? 'Excluida a propósito (no se publica)' : 'Sin tarifa cargada en Smoobu'
+      return {
+        id,
+        name,
+        published: Boolean(p),
+        reason,
+        price: p?.price || 0,
+        currency: p?.currency || '',
+        minNights: p?.minNights || 0,
+        cleaningFee: p ? Number(fees[id]) || 0 : Number(fees[id]) || 0,
+        guests: p?.guests || 0,
+        bedrooms: p?.bedrooms || 0,
+        photos: photos[id] ? 1 + (photos[id].gallery || []).length : 0,
+        image: photos[id]?.image || ''
+      }
+    })
+    items.sort((x, y) => Number(y.published) - Number(x.published) || x.name.localeCompare(y.name))
+    res.json({ items, published: items.filter((i) => i.published).length })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
 // Admin: brokers + their commission report built from Smoobu
 app.get('/api/admin/brokers', requireAuth, async (_, res) => {
   const registry = await readRegistry()
