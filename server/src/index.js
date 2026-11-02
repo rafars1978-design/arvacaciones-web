@@ -7,6 +7,7 @@ import path from 'path'
 import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 import Stripe from 'stripe'
+import { loadOverrides, saveOverrides, uploadImage, storeEnabled } from './store.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -54,7 +55,7 @@ app.use(cors({
   },
   credentials: true
 }))
-app.use(express.json({ limit: '2mb' }))
+app.use(express.json({ limit: '8mb' }))
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────────
 const readProperties = async () => {
@@ -212,7 +213,14 @@ const fetchSmoobuBookings = async ({ from, to, apartmentId }) => {
 
 const overlapsStay = (b, arrivalDate, departureDate) => b.arrival < departureDate && b.departure > arrivalDate
 
-const readFees = async () => JSON.parse(await fs.readFile(feesPath, 'utf-8').catch(() => '{}'))
+const readFees = async () => {
+  const base = JSON.parse(await fs.readFile(feesPath, 'utf-8').catch(() => '{}'))
+  const edits = await loadOverrides()
+  for (const [id, o] of Object.entries(edits)) {
+    if (o && o.cleaningFee !== undefined && o.cleaningFee !== null) base[id] = Number(o.cleaningFee) || 0
+  }
+  return base
+}
 
 // Price a stay from Smoobu rates: nightly total + cleaning fee + 16% IVA
 const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate, bookings }) => {
@@ -296,6 +304,13 @@ const equipmentLabels = (amenities) => {
   return AMENITY_LABELS.filter(([en]) => names.has(en)).map(([, es]) => es).slice(0, 8)
 }
 
+// Photos shown for a property: the list edited in the admin, else the curated set, else Smoobu's own
+const effectivePhotos = (curated, edit, smoobuImages = []) => {
+  if (Array.isArray(edit?.photos) && edit.photos.length) return edit.photos
+  const base = curated ? [curated.image, ...(curated.gallery || [])] : smoobuImages
+  return base.filter(Boolean)
+}
+
 let liveCache = { at: 0, list: null }
 const LIVE_TTL_MS = 10 * 60 * 1000
 
@@ -305,6 +320,7 @@ const buildLiveProperties = async () => {
   const [apartments, local] = await Promise.all([fetchSmoobuApartments(), readProperties()])
   const photos = JSON.parse(await fs.readFile(photosPath, 'utf-8').catch(() => '{}'))
   const fees = await readFees()
+  const edits = await loadOverrides()
   const wanted = apartments.filter((a) => !isExcluded(a.name || a.title))
   const ids = wanted.map((a) => String(a.id))
 
@@ -317,6 +333,8 @@ const buildLiveProperties = async () => {
     const detail = detailResults[i].status === 'fulfilled' ? detailResults[i].value : {}
     const override = local.find((p) => p.smoobuApartmentId === id)
     if (override && override.active === false) return
+    const ed = edits[id] || {}
+    if (ed.hidden) return
 
     const rooms = detail.rooms || {}
     const guests = Number(rooms.maxOccupancy) || 2
@@ -327,11 +345,12 @@ const buildLiveProperties = async () => {
     const images = (apt.images || detail.images || []).map((img) => img.url || img).filter(Boolean)
     const hasCustomImage = override?.image && !override.image.includes('unsplash')
     const curated = photos[id]
+    const shown = effectivePhotos(curated, ed, images)
 
     list.push({
       id: `smoobu_${id}`,
       smoobuApartmentId: id,
-      name: override?.name && override.name !== 'Nueva propiedad' ? override.name : (apt.name || detail.name || 'Propiedad'),
+      name: ed.name || (override?.name && override.name !== 'Nueva propiedad' ? override.name : (apt.name || detail.name || 'Propiedad')),
       location: (detail.location?.city || override?.location || 'Playa del Carmen').toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()),
       price,
       currency: detail.currency || 'MXN',
@@ -343,10 +362,10 @@ const buildLiveProperties = async () => {
       guests,
       bedrooms,
       bathrooms,
-      image: hasCustomImage ? override.image : (curated?.image || images[0] || override?.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'),
-      gallery: override?.gallery?.length ? override.gallery : (curated?.gallery || images.slice(1)),
-      amenities: override?.amenities?.length ? override.amenities : equipmentLabels(detail.amenities || detail.equipments),
-      summary: override?.summary && !override.summary.startsWith('Propiedad administrable')
+      image: shown[0] || (hasCustomImage ? override.image : (override?.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop')),
+      gallery: shown.length ? shown.slice(1) : (override?.gallery?.length ? override.gallery : []),
+      amenities: ed.amenities?.length ? ed.amenities : (override?.amenities?.length ? override.amenities : equipmentLabels(detail.amenities || detail.equipments)),
+      summary: ed.summary ? ed.summary : override?.summary && !override.summary.startsWith('Propiedad administrable')
         ? override.summary
         : `${bedrooms} recámara${bedrooms === 1 ? '' : 's'}, ${bathrooms} baño${bathrooms === 1 ? '' : 's'}, hasta ${guests} huéspedes.`,
       active: true,
@@ -670,21 +689,23 @@ app.get('/api/brokers/:code', async (req, res) => {
 app.get('/api/admin/catalog', requireAuth, async (req, res) => {
   try {
     if (req.query.refresh) liveCache = { at: 0, list: null }
-    const [apartments, live, photos, fees] = await Promise.all([
+    const [apartments, live, photos, fees, edits] = await Promise.all([
       fetchSmoobuApartments(),
       buildLiveProperties(),
       fs.readFile(photosPath, 'utf-8').then(JSON.parse).catch(() => ({})),
-      readFees()
+      readFees(),
+      loadOverrides()
     ])
     const items = apartments.map((a) => {
       const id = String(a.id)
       const name = a.name || a.title || id
       const p = live.find((x) => x.smoobuApartmentId === id)
       let reason = ''
-      if (!p) reason = isExcluded(name) ? 'Excluida a propósito (no se publica)' : 'Sin tarifa cargada en Smoobu'
+      if (!p) reason = edits[id]?.hidden ? 'Oculta desde el admin' : isExcluded(name) ? 'Excluida a propósito (no se publica)' : 'Sin tarifa cargada en Smoobu'
+      const shown = effectivePhotos(photos[id], edits[id])
       return {
         id,
-        name,
+        name: edits[id]?.name || name,
         published: Boolean(p),
         reason,
         price: p?.price || 0,
@@ -693,13 +714,119 @@ app.get('/api/admin/catalog', requireAuth, async (req, res) => {
         cleaningFee: p ? Number(fees[id]) || 0 : Number(fees[id]) || 0,
         guests: p?.guests || 0,
         bedrooms: p?.bedrooms || 0,
-        photos: photos[id] ? 1 + (photos[id].gallery || []).length : 0,
-        image: photos[id]?.image || ''
+        photos: shown.length,
+        image: shown[0] || ''
       }
     })
     items.sort((x, y) => Number(y.published) - Number(x.published) || x.name.localeCompare(y.name))
     res.json({ items, published: items.filter((i) => i.published).length })
   } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// ── Admin: edit one property (photos, text, cleaning fee, visibility) ─────────
+const needsStore = (err, res) => {
+  if (err.message === 'NO_TOKEN') {
+    res.status(503).json({ message: 'Falta conectar el guardado: agrega GITHUB_TOKEN en las variables de Render (te explico cómo).' })
+    return true
+  }
+  return false
+}
+
+const propertyForEdit = async (id) => {
+  const [detail, photos, edits, fees, local] = await Promise.all([
+    fetchSmoobuDetail(id),
+    fs.readFile(photosPath, 'utf-8').then(JSON.parse).catch(() => ({})),
+    loadOverrides(),
+    readFees(),
+    readProperties()
+  ])
+  const ed = edits[id] || {}
+  const rooms = detail.rooms || {}
+  const bedrooms = Number(rooms.bedrooms) || 1
+  const bathrooms = Number(rooms.bathrooms) || 1
+  const guests = Number(rooms.maxOccupancy) || 2
+  const legacy = local.find((p) => p.smoobuApartmentId === id)
+  const defaultSummary = `${bedrooms} recámara${bedrooms === 1 ? '' : 's'}, ${bathrooms} baño${bathrooms === 1 ? '' : 's'}, hasta ${guests} huéspedes.`
+  return {
+    id,
+    smoobuName: detail.name || '',
+    name: ed.name || detail.name || '',
+    summary: ed.summary || (legacy?.summary && !legacy.summary.startsWith('Propiedad administrable') ? legacy.summary : defaultSummary),
+    amenities: ed.amenities?.length ? ed.amenities : equipmentLabels(detail.amenities || detail.equipments),
+    cleaningFee: Number(fees[id]) || 0,
+    hidden: Boolean(ed.hidden),
+    photos: effectivePhotos(photos[id], ed),
+    storeReady: storeEnabled()
+  }
+}
+
+app.get('/api/admin/property/:id', requireAuth, async (req, res) => {
+  try {
+    res.json(await propertyForEdit(String(req.params.id)))
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+app.post('/api/admin/property/:id', requireAuth, async (req, res) => {
+  const id = String(req.params.id)
+  const body = req.body || {}
+  const clean = {}
+  if (typeof body.name === 'string') clean.name = body.name.trim().slice(0, 120)
+  if (typeof body.summary === 'string') clean.summary = body.summary.trim().slice(0, 1500)
+  if (Array.isArray(body.amenities)) clean.amenities = body.amenities.map((x) => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 30)
+  if (body.cleaningFee !== undefined && body.cleaningFee !== '') clean.cleaningFee = Math.max(0, Math.min(5000, Number(body.cleaningFee) || 0))
+  if (body.hidden !== undefined) clean.hidden = Boolean(body.hidden)
+  if (Array.isArray(body.photos)) {
+    clean.photos = body.photos.map((u) => String(u)).filter((u) => /^https:\/\/.{5,480}$/.test(u)).slice(0, 60)
+  }
+  try {
+    await saveOverrides((all) => {
+      const cur = all[id] || {}
+      const next = { ...cur, ...clean }
+      // empty text falls back to the default instead of storing blanks
+      if (clean.name === '') delete next.name
+      if (clean.summary === '') delete next.summary
+      if (clean.amenities && !clean.amenities.length) delete next.amenities
+      all[id] = next
+      return all
+    }, `admin: editar propiedad ${id}`)
+    liveCache = { at: 0, list: null }
+    res.json({ ok: true, property: await propertyForEdit(id) })
+  } catch (err) {
+    if (needsStore(err, res)) return
+    console.error(err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
+app.post('/api/admin/property/:id/photo', requireAuth, async (req, res) => {
+  const id = String(req.params.id)
+  try {
+    const raw = String(req.body?.data || '').replace(/^data:image\/\w+;base64,/, '')
+    const buffer = Buffer.from(raw, 'base64')
+    if (buffer.length < 1000) return res.status(400).json({ message: 'La imagen está vacía o dañada.' })
+    if (buffer.length > 6 * 1024 * 1024) return res.status(400).json({ message: 'La imagen pesa más de 6 MB.' })
+    const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8
+    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50
+    if (!isJpeg && !isPng) return res.status(400).json({ message: 'Solo se aceptan fotos JPG o PNG.' })
+
+    const filePath = `fotos/${id}/${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}.${isPng ? 'png' : 'jpg'}`
+    const url = await uploadImage(filePath, buffer, `admin: foto de propiedad ${id}`)
+
+    const current = (await propertyForEdit(id)).photos
+    await saveOverrides((all) => {
+      const cur = all[id] || {}
+      all[id] = { ...cur, photos: [...(cur.photos?.length ? cur.photos : current), url] }
+      return all
+    }, `admin: agregar foto a ${id}`)
+    liveCache = { at: 0, list: null }
+    res.json({ ok: true, url, photos: (await propertyForEdit(id)).photos })
+  } catch (err) {
+    if (needsStore(err, res)) return
     console.error(err)
     res.status(500).json({ message: err.message })
   }

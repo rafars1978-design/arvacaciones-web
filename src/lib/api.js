@@ -49,6 +49,9 @@ export const api = {
     deleteProperty: (id, token) => request(`/properties/${id}`, { method: 'DELETE', token }),
     // Booking & Stripe
     getBroker: (code) => request(`/brokers/${encodeURIComponent(code)}`),
+    getAdminProperty: (id, token) => request(`/admin/property/${id}`, { token }),
+    saveAdminProperty: (id, body, token) => request(`/admin/property/${id}`, { method: 'POST', body: JSON.stringify(body), token }),
+    uploadPropertyPhoto: (id, body, token) => request(`/admin/property/${id}/photo`, { method: 'POST', body: JSON.stringify(body), token }),
     getCatalog: (token, refresh) => request(`/admin/catalog${refresh ? '?refresh=1' : ''}`, { token }),
     getBrokers: (token) => request('/admin/brokers', { token }),
     createBroker: (body, token) => request('/admin/brokers', { method: 'POST', body: JSON.stringify(body), token }),

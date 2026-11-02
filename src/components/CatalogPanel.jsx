@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { RefreshCcw } from 'lucide-react'
 import { api } from '../lib/api'
+import PropertyEditor from './PropertyEditor'
 
 const money = (n, c) => `$${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}${c ? ` ${c}` : ''}`
 
@@ -9,6 +10,7 @@ function CatalogPanel({ token }) {
   const [data, setData] = useState({ items: [], published: 0 })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [editing, setEditing] = useState('')
 
   const load = async (refresh) => {
     try {
@@ -51,6 +53,7 @@ function CatalogPanel({ token }) {
               <th className="py-2 pr-3 text-right">Limpieza</th>
               <th className="py-2 pr-3 text-right">Huésp. / rec.</th>
               <th className="py-2 pr-3 text-right">Fotos</th>
+              <th className="py-2" />
             </tr>
           </thead>
           <tbody>
@@ -72,11 +75,15 @@ function CatalogPanel({ token }) {
                 <td className="py-2 pr-3 text-right">{i.cleaningFee ? money(i.cleaningFee) : '—'}</td>
                 <td className="py-2 pr-3 text-right">{i.published ? `${i.guests} / ${i.bedrooms}` : '—'}</td>
                 <td className="py-2 pr-3 text-right">{i.photos || '—'}</td>
+                <td className="py-2 text-right">
+                  <button onClick={() => setEditing(i.id)} className="rounded-lg border border-border px-3 py-1 text-xs hover:border-primary">Editar</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {editing && <PropertyEditor id={editing} token={token} onClose={() => setEditing('')} onSaved={() => load(true)} />}
     </div>
   )
 }
