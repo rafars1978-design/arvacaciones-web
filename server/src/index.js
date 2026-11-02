@@ -624,13 +624,20 @@ app.post('/api/quote', async (req, res) => {
   }
 })
 
-// Admin: raw Smoobu data for one apartment (to check which fields Smoobu exposes)
+// Admin: raw Smoobu data for one apartment (rates + bookings) to compare against the Smoobu calendar
 app.get('/api/smoobu/debug/:id', requireAuth, async (req, res) => {
   try {
     const id = String(req.params.id)
     const today = new Date().toISOString().slice(0, 10)
-    const [detail, range] = await Promise.all([fetchSmoobuDetail(id), fetchSmoobuRatesRange([id], today, addDays(today, 5))])
-    res.json({ detail, rates: range[id] })
+    const from = String(req.query.from || today)
+    const to = String(req.query.to || addDays(from, 5))
+    const [detail, range, resv] = await Promise.all([
+      fetchSmoobuDetail(id),
+      fetchSmoobuRatesRange([id], from, to),
+      fetch(`https://login.smoobu.com/api/reservations?apartmentId=${id}&from=${from}&to=${to}&showCancellation=false&pageSize=100`, { headers: smoobuHeaders() }).then((r) => r.json()).catch((e) => ({ error: e.message }))
+    ])
+    const bookings = (resv.bookings || []).map((b) => ({ id: b.id, type: b.type, arrival: b.arrival, departure: b.departure, channel: b.channel?.name, apt: b.apartment?.id }))
+    res.json({ detailName: detail.name, rates: range[id], bookings, bookingsRaw: resv.error ? resv : undefined })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
