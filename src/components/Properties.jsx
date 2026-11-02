@@ -77,7 +77,7 @@ function Properties() {
             </motion.h2>
 
             <p className="text-muted mt-4 max-w-2xl">
-              Departamentos y estudios en Playa del Carmen, Tulum y Mahahual. Elige el tuyo, consulta fechas y reserva directo con pago seguro.
+              Departamentos y estudios en Playa del Carmen, Tulum y Mahahual. Elige el tuyo, consulta fechas y reserva directo con pago seguro. Precio más bajo garantizado reservando en nuestra página.
             </p>
           </div>
 
@@ -176,7 +176,7 @@ function Properties() {
                             {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
                             <span className="text-muted text-sm"> total</span>
                             <div className="text-[11px] text-muted leading-tight">
-                              {searchNights} noche{searchNights !== 1 ? 's' : ''} · ${Math.round(displayPrice)} / noche
+                              {searchNights} noche{searchNights !== 1 ? 's' : ''} · ${Math.round(displayPrice)} / noche{availabilityMatch.discountRate > 0 ? ` · ${Math.round(availabilityMatch.discountRate * 100)}% desc.` : ''}
                             </div>
                           </>
                         ) : (

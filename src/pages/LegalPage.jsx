@@ -19,6 +19,7 @@ const PAGES = {
         'El total incluye el hospedaje, una tarifa de limpieza única por estancia y el IVA del 16%, desglosados antes del pago.',
         'Las tarifas se expresan en dólares estadounidenses (USD). El cobro se realiza en pesos mexicanos (MXN) al tipo de cambio del día, que te mostramos antes de pagar. Tu banco puede aplicar comisiones propias.'
       ]],
+      ['Descuentos por estancia', ['Al reservar directamente en este sitio aplicamos 10% de descuento sobre la tarifa de hospedaje en estancias de 7 noches o más, y 20% en estancias de 30 noches o más. Los descuentos no aplican si alguna noche de la estancia cae entre el 15 de diciembre y el 30 de marzo, ni a la tarifa de limpieza.']],
       ['Pago', ['Los pagos se procesan en línea a través de Clip. AR Vacaciones no almacena ni tiene acceso a los datos completos de tu tarjeta.']],
       ['Huéspedes y uso de la propiedad', [
         'Cada propiedad tiene una capacidad máxima de huéspedes que no debe excederse.',

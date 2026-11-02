@@ -105,6 +105,8 @@ function PropertyDetail({ property, onClose, onReserve }) {
                 </ul>
               </>
             )}
+            <p className="mt-4 text-xs text-primary font-medium">Precio más bajo garantizado reservando en nuestra página.</p>
+            <p className="mt-1 text-xs text-muted">10% de descuento en estancias de 7 noches o más y 20% en estancias de 30 noches o más. No aplica del 15 de diciembre al 30 de marzo.</p>
             <button
               type="button"
               onClick={() => onReserve(property)}

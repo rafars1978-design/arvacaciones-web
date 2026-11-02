@@ -136,6 +136,22 @@ const isoDay = (d) => d.toISOString().slice(0, 10)
 
 const IVA_RATE = 0.16
 
+// Direct-booking discounts on the nightly rate: 10% from 7 nights, 20% from 30 nights.
+// They do not apply when any night of the stay falls between 15 Dec and 30 Mar.
+const isBlackoutNight = (iso) => {
+  const md = iso.slice(5)
+  return md >= '12-15' || md <= '03-30'
+}
+const stayDiscount = (arrivalDate, nights) => {
+  if (nights < 7) return { rate: 0, label: '' }
+  for (let n = 0; n < nights; n++) {
+    if (isBlackoutNight(addDays(arrivalDate, n))) return { rate: 0, label: '' }
+  }
+  return nights >= 30
+    ? { rate: 0.2, label: 'Descuento por estancia de 1 mes (20%)' }
+    : { rate: 0.1, label: 'Descuento por estancia de 1 semana (10%)' }
+}
+
 // Daily rates {price, min_length_of_stay, available} per apartment id for a date range
 const fetchSmoobuRatesRange = async (ids, startDate, endDate) => {
   const out = {}
@@ -230,7 +246,10 @@ const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate, boo
   if (nights < minNights) {
     return { ok: false, reason: 'min_stay', minNights, message: `La estancia mínima para esas fechas es de ${minNights} noches.` }
   }
-  const lodging = nightly.reduce((a, b) => a + b, 0)
+  const lodgingGross = nightly.reduce((a, b) => a + b, 0)
+  const disc = stayDiscount(arrivalDate, nights)
+  const discountAmount = Math.round(lodgingGross * disc.rate * 100) / 100
+  const lodging = Math.round((lodgingGross - discountAmount) * 100) / 100
   const cleaning = Number(fees[id]) || 0
   const subtotal = lodging + cleaning
   const iva = Math.round(subtotal * IVA_RATE * 100) / 100
@@ -240,6 +259,10 @@ const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate, boo
     nights,
     minNights,
     nightlyAvg: Math.round((lodging / nights) * 100) / 100,
+    lodgingGross,
+    discountRate: disc.rate,
+    discountLabel: disc.label,
+    discountAmount,
     lodging,
     cleaning,
     subtotal,
@@ -627,7 +650,8 @@ app.post('/api/search/availability', async (req, res) => {
         price: q.nightlyAvg,
         currency: p.currency,
         minNights: q.minNights,
-        total: q.total
+        total: q.total,
+        discountRate: q.discountRate
       }))
     res.json({ source: 'smoobu', availableProperties })
   } catch (err) {

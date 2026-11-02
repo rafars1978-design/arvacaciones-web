@@ -140,6 +140,16 @@ function Hero() {
                 Ver Propiedades
               </motion.a>
             </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-5 py-2 text-sm text-white"
+            >
+              <span className="w-2 h-2 bg-primary rounded-full" />
+              Precio más bajo garantizado reservando en nuestra página
+            </motion.p>
           </div>
         </div>
 

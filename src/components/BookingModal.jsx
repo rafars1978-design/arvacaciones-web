@@ -267,9 +267,15 @@ function BookingModal({ property, availability, onClose }) {
                 {hasQuote && !quoting && (
                   <>
                     <div className="flex justify-between text-sm text-muted">
-                      <span>{quote.nights} noche{quote.nights !== 1 ? 's' : ''} (prom. ${fmt(quote.nightlyAvg)} / noche)</span>
-                      <span>${fmt(quote.lodging)}</span>
+                      <span>{quote.nights} noche{quote.nights !== 1 ? 's' : ''}{quote.discountRate > 0 ? '' : ` (prom. $${fmt(quote.nightlyAvg)} / noche)`}</span>
+                      <span>${fmt(quote.lodgingGross ?? quote.lodging)}</span>
                     </div>
+                    {quote.discountRate > 0 && (
+                      <div className="flex justify-between text-sm text-primary font-medium">
+                        <span>{quote.discountLabel}</span>
+                        <span>-${fmt(quote.discountAmount)}</span>
+                      </div>
+                    )}
                     {quote.cleaning > 0 && (
                       <div className="flex justify-between text-sm text-muted">
                         <span>Limpieza</span>
