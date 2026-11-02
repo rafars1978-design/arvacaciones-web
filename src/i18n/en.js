@@ -215,5 +215,6 @@ export default {
   "Escríbenos por WhatsApp": "Message us on WhatsApp",
   "Hola, tengo una duda sobre mi reserva con AR Vacaciones": "Hi, I have a question about my booking with AR Vacaciones",
   "Check-in": "Check-in",
-  "Check-out": "Check-out"
+  "Check-out": "Check-out",
+  "Departamentos y estudios que administramos": "Apartments and studios we manage"
 }

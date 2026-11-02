@@ -39,8 +39,11 @@ async function request(path, options = {}) {
   return payload
 }
 
+let propertiesRequest = null
+
 export const api = {
-    getProperties: () => request('/properties'),
+    // One request per visit: the property list and the counters share it
+    getProperties: () => (propertiesRequest ||= request('/properties').catch((err) => { propertiesRequest = null; throw err })),
     getAdminProperties: (token) => request('/properties/admin', { token }),
     searchAvailability: (body) => request('/search/availability', { method: 'POST', body: JSON.stringify(body) }),
     submitContact: (body) => request('/contact', { method: 'POST', body: JSON.stringify(body) }),

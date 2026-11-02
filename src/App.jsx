@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import About from './components/About'
@@ -36,6 +36,13 @@ function HomePage() {
 
 function Layout() {
   const { t } = useI18n()
+  const { pathname } = useLocation()
+
+  // Opening another page (admin, legal, brokers...) always starts at the top
+  useEffect(() => {
+    if (pathname !== '/') window.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

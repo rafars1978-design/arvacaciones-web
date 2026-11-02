@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Users, Home, MapPin, TrendingUp } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
+import { api } from '../lib/api'
 
 function AnimatedCounter({ end, duration = 2, suffix = '' }) {
   const [count, setCount] = useState(0)
@@ -30,14 +31,19 @@ function Metrics() {
   const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
+  // Every property we manage, including ones that are not on the site yet
+  const [total, setTotal] = useState(32)
+  useEffect(() => {
+    api.getProperties().then((r) => r.total && setTotal(r.total)).catch(() => {})
+  }, [])
 
   const metrics = [
     {
       icon: Users,
-      value: 22,
+      value: total,
       suffix: '',
       label: t('Propiedades'),
-      description: t('Departamentos y estudios listos para reservar')
+      description: t('Departamentos y estudios que administramos')
     },
     {
       icon: Home,

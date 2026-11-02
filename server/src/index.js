@@ -375,7 +375,10 @@ const buildLiveProperties = async () => {
 
   // Without a Smoobu rate there is nothing to sell: keep it off the public site
   const sellable = list.filter((p) => p.price > 0)
-  liveCache = { at: Date.now(), list: sellable }
+  // Playa del Carmen first; Tulum and Mahahual go to the end (the sort is stable, so the rest keeps its order)
+  const inPlaya = (p) => /playa/i.test(p.location)
+  sellable.sort((a, b) => Number(!inPlaya(a)) - Number(!inPlaya(b)))
+  liveCache = { at: Date.now(), list: sellable, total: apartments.length }
   return sellable
 }
 
@@ -614,7 +617,7 @@ app.get('/api/properties', async (_, res) => {
 
     try {
       const properties = await buildLiveProperties()
-      return res.json({ properties, source: 'smoobu' })
+      return res.json({ properties, source: 'smoobu', total: liveCache.total || properties.length })
     } catch (smoobuErr) {
       console.error('Smoobu fetch error, falling back to local:', smoobuErr.message)
       const fallback = active.filter((p) => p.smoobuApartmentId && p.price > 0 && !isExcluded(p.name))
