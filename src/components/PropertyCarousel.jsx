@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useI18n } from '../lib/i18n'
 
 const FALLBACK = 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&h=900&fit=crop'
 
@@ -10,6 +11,7 @@ export const getImages = (property) => {
 
 // Image slider with arrows, dots and swipe. Clicks on the image bubble up to the parent.
 function PropertyCarousel({ images, alt, index, onIndexChange, className = '', imgClassName = 'object-cover', showCounter = false }) {
+  const { t } = useI18n()
   const [inner, setInner] = useState(0)
   const touchX = useRef(null)
   const controlled = typeof index === 'number'
@@ -40,7 +42,7 @@ function PropertyCarousel({ images, alt, index, onIndexChange, className = '', i
           <img
             key={src + i}
             src={src}
-            alt={`${alt} - foto ${i + 1}`}
+            alt={`${alt} - ${t('foto')} ${i + 1}`}
             loading={i === 0 ? 'eager' : 'lazy'}
             draggable={false}
             className={`w-full h-full shrink-0 ${imgClassName}`}
@@ -53,7 +55,7 @@ function PropertyCarousel({ images, alt, index, onIndexChange, className = '', i
         <>
           <button
             type="button"
-            aria-label="Foto anterior"
+            aria-label={t('Foto anterior')}
             onClick={go(-1)}
             className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center md:opacity-0 md:group-hover/carousel:opacity-100 transition-opacity"
           >
@@ -61,7 +63,7 @@ function PropertyCarousel({ images, alt, index, onIndexChange, className = '', i
           </button>
           <button
             type="button"
-            aria-label="Foto siguiente"
+            aria-label={t('Foto siguiente')}
             onClick={go(1)}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center md:opacity-0 md:group-hover/carousel:opacity-100 transition-opacity"
           >

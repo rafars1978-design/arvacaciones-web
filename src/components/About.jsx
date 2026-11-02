@@ -3,31 +3,33 @@ import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Award, Globe, Shield, Heart } from 'lucide-react'
+import { useI18n } from '../lib/i18n'
 
 function About() {
+  const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   const features = [
     {
       icon: Award,
-      title: 'Excelencia',
-      description: 'Departamentos y estudios cuidados, con fotos reales y descripciones claras'
+      title: t('Excelencia'),
+      description: t('Departamentos y estudios cuidados, con fotos reales y descripciones claras')
     },
     {
       icon: Globe,
-      title: 'Huéspedes del mundo',
-      description: 'Te atendemos en español e inglés, antes, durante y después de tu estancia'
+      title: t('Huéspedes del mundo'),
+      description: t('Te atendemos en español e inglés, antes, durante y después de tu estancia')
     },
     {
       icon: Shield,
-      title: 'Confianza',
-      description: 'Pago en línea seguro y precios claros: hospedaje, limpieza e IVA desde el principio'
+      title: t('Confianza'),
+      description: t('Pago en línea seguro y precios claros: hospedaje, limpieza e IVA desde el principio')
     },
     {
       icon: Heart,
-      title: 'Experiencia',
-      description: 'Cerca de la playa y de la 5ª Avenida, con albercas, rooftops y todo lo que necesitas'
+      title: t('Experiencia'),
+      description: t('Cerca de la playa y de la 5ª Avenida, con albercas, rooftops y todo lo que necesitas')
     }
   ]
 
@@ -49,7 +51,7 @@ function About() {
               transition={{ duration: 0.6 }}
               className="inline-block text-primary font-semibold tracking-wide uppercase text-sm mb-4"
             >
-              Quiénes Somos
+              {t('Quiénes Somos')}
             </motion.span>
 
             <motion.h2
@@ -58,8 +60,8 @@ function About() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight"
             >
-              Tu Socio en
-              <span className="text-gradient"> Estancias que Valen la Pena</span>
+              {t('Tu Socio en')}
+              <span className="text-gradient">{t(' Estancias que Valen la Pena')}</span>
             </motion.h2>
 
             <motion.p
@@ -68,7 +70,7 @@ function About() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-muted text-lg leading-relaxed mb-8"
             >
-              Administramos departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual. Cuidamos cada propiedad para que llegues y todo esté listo: limpia, equipada y bien ubicada.
+              {t('Administramos departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual. Cuidamos cada propiedad para que llegues y todo esté listo: limpia, equipada y bien ubicada.')}
             </motion.p>
 
             <motion.p
@@ -77,7 +79,7 @@ function About() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-muted text-lg leading-relaxed mb-10"
             >
-              Reservas directo con nosotros, sin intermediarios, y te acompañamos por WhatsApp desde la reserva hasta el check-out.
+              {t('Reservas directo con nosotros, sin intermediarios, y te acompañamos por WhatsApp desde la reserva hasta el check-out.')}
             </motion.p>
 
             <motion.div
@@ -92,7 +94,7 @@ function About() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Explorar Propiedades
+                {t('Explorar Propiedades')}
               </motion.a>
               <motion.a
                 href="#contact"
@@ -100,7 +102,7 @@ function About() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Contactar
+                {t('Contactar')}
               </motion.a>
             </motion.div>
           </div>
@@ -132,7 +134,7 @@ function About() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="mt-20 pt-12 border-t border-border"
         >
-          <p className="text-center text-muted mb-8">También nos encuentras en</p>
+          <p className="text-center text-muted mb-8">{t('También nos encuentras en')}</p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60">
             {['Airbnb', 'Booking.com'].map((partner) => (
               <span key={partner} className="text-xl font-semibold text-foreground/50">{partner}</span>

@@ -6,8 +6,11 @@ import { buildWhatsAppLink } from '../lib/config'
 import BookingModal from './BookingModal'
 import PropertyCarousel, { getImages } from './PropertyCarousel'
 import PropertyDetail from './PropertyDetail'
+import { localizedSummary } from '../lib/property'
+import { useI18n } from '../lib/i18n'
 
 function Properties() {
+  const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const [favorites, setFavorites] = useState([])
@@ -64,7 +67,7 @@ function Properties() {
               transition={{ duration: 0.6 }}
               className="inline-block text-primary font-semibold tracking-wide uppercase text-sm mb-4"
             >
-              Nuestra Colección
+              {t('Nuestra Colección')}
             </motion.span>
 
             <motion.h2
@@ -73,11 +76,11 @@ function Properties() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="font-display text-4xl md:text-5xl font-bold text-foreground"
             >
-              Nuestras <span className="text-primary">Propiedades</span>
+              {t('Nuestras ')}<span className="text-primary">{t('Propiedades')}</span>
             </motion.h2>
 
             <p className="text-muted mt-4 max-w-2xl">
-              Departamentos y estudios en Playa del Carmen, Tulum y Mahahual. Elige el tuyo, consulta fechas y reserva directo con pago seguro. Precio más bajo garantizado reservando en nuestra página.
+              {t('Departamentos y estudios en Playa del Carmen, Tulum y Mahahual. Elige el tuyo, consulta fechas y reserva directo con pago seguro. Precio más bajo garantizado reservando en nuestra página.')}
             </p>
           </div>
 
@@ -99,13 +102,13 @@ function Properties() {
         {availability && (
           <div className="rounded-2xl border border-border bg-white p-4 md:p-5 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <p className="font-semibold text-foreground">Resultado de búsqueda</p>
+              <p className="font-semibold text-foreground">{t('Resultado de búsqueda')}</p>
               <p className="text-sm text-muted">
-                Disponibilidad en tiempo real · {availability.availableProperties?.length || 0} opciones disponibles.
+                {t('Disponibilidad en tiempo real · {n} opciones disponibles.', { n: availability.availableProperties?.length || 0 })}
               </p>
             </div>
             <button onClick={() => setAvailability(null)} className="self-start md:self-auto text-sm font-medium text-primary hover:underline">
-              Limpiar filtro
+              {t('Limpiar filtro')}
             </button>
           </div>
         )}
@@ -130,8 +133,8 @@ function Properties() {
         ) : visibleProperties.length === 0 ? (
           <div className="rounded-3xl border border-border bg-white p-10 text-center">
             <WifiOff className="w-8 h-8 text-primary mx-auto mb-4" />
-            <h3 className="font-display text-3xl font-bold text-foreground mb-3">No hay propiedades para esas fechas</h3>
-            <p className="text-muted">Prueba con otras fechas o escríbenos por WhatsApp y te ayudamos manualmente.</p>
+            <h3 className="font-display text-3xl font-bold text-foreground mb-3">{t('No hay propiedades para esas fechas')}</h3>
+            <p className="text-muted">{t('Prueba con otras fechas o escríbenos por WhatsApp y te ayudamos manualmente.')}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -164,7 +167,7 @@ function Properties() {
 
                     {property.featured && (
                       <div className="absolute top-4 left-4 bg-foreground/75 text-white px-3 py-1 rounded-full text-xs font-semibold tracking-wide">
-                        Destacada
+                        {t('Destacada')}
                       </div>
                     )}
 
@@ -174,18 +177,18 @@ function Properties() {
                           <>
                             <span className="text-2xl font-bold text-foreground">${Math.round(availabilityMatch.total).toLocaleString('en-US')}</span>
                             {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
-                            <span className="text-muted text-sm"> total</span>
+                            <span className="text-muted text-sm">{t(' total')}</span>
                             <div className="text-[11px] text-muted leading-tight">
-                              {searchNights} noche{searchNights !== 1 ? 's' : ''} · ${Math.round(displayPrice)} / noche{availabilityMatch.discountRate > 0 ? ` · ${Math.round(availabilityMatch.discountRate * 100)}% desc.` : ''}
+                              {searchNights} {searchNights === 1 ? t('noche') : t('noches')} · ${Math.round(displayPrice)}{t(' / noche')}{availabilityMatch.discountRate > 0 ? ` · ${t('{n}% desc.', { n: Math.round(availabilityMatch.discountRate * 100) })}` : ''}
                             </div>
                           </>
                         ) : (
                           <>
                             <span className="text-2xl font-bold text-foreground">${Math.round(displayPrice)}</span>
                             {property.currency && <span className="text-muted text-sm"> {property.currency}</span>}
-                            <span className="text-muted text-sm"> / noche</span>
+                            <span className="text-muted text-sm">{t(' / noche')}</span>
                             {(availabilityMatch?.minNights || property.minNights) > 1 && (
-                              <div className="text-[11px] text-muted leading-tight">Mín. {availabilityMatch?.minNights || property.minNights} noches</div>
+                              <div className="text-[11px] text-muted leading-tight">{t('Mín. {n} noches', { n: availabilityMatch?.minNights || property.minNights })}</div>
                             )}
                           </>
                         )}
@@ -214,13 +217,13 @@ function Properties() {
                     >
                       {property.name}
                     </h3>
-                    <p className="text-muted text-sm leading-relaxed mb-4 line-clamp-2">{property.summary}</p>
+                    <p className="text-muted text-sm leading-relaxed mb-4 line-clamp-2">{localizedSummary(property, t)}</p>
 
                     {(property.amenities || []).length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {(property.amenities || []).slice(0, 3).map((amenity) => (
                           <span key={amenity} className="px-3 py-1 bg-beige rounded-full text-xs font-medium text-muted">
-                            {amenity}
+                            {t(amenity)}
                           </span>
                         ))}
                       </div>
@@ -236,7 +239,7 @@ function Properties() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        Reservar
+                        {t('Reservar')}
                       </motion.button>
                     </div>
                   </div>
@@ -258,7 +261,7 @@ function Properties() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            Solicitar más opciones
+            {t('Solicitar más opciones')}
           </motion.a>
         </motion.div>
       </div>

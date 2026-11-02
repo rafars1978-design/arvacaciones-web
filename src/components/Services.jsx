@@ -1,51 +1,53 @@
 import React, { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Sparkles, Key, Phone, Waves, Sun, Wifi, Shield, MapPin } from 'lucide-react'
+import { useI18n } from '../lib/i18n'
 
 function Services() {
+  const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   const services = [
     {
       icon: Sparkles,
-      title: 'Limpieza Profesional',
-      description: 'Tu estancia empieza con el departamento limpio y listo. La limpieza final está incluida en el precio'
+      title: t('Limpieza Profesional'),
+      description: t('Tu estancia empieza con el departamento limpio y listo. La limpieza final está incluida en el precio')
     },
     {
       icon: Key,
-      title: 'Check-in Fácil',
-      description: 'Te enviamos las instrucciones de llegada con tiempo para que entres sin complicaciones'
+      title: t('Check-in Fácil'),
+      description: t('Te enviamos las instrucciones de llegada con tiempo para que entres sin complicaciones')
     },
     {
       icon: Phone,
-      title: 'Atención por WhatsApp',
-      description: 'Resolvemos tus dudas antes de reservar y durante tu estancia, directo por WhatsApp'
+      title: t('Atención por WhatsApp'),
+      description: t('Resolvemos tus dudas antes de reservar y durante tu estancia, directo por WhatsApp')
     },
     {
       icon: Waves,
-      title: 'Albercas y Amenidades',
-      description: 'Albercas, gimnasio y áreas comunes en la mayoría de nuestros edificios; algunas con alberca privada'
+      title: t('Albercas y Amenidades'),
+      description: t('Albercas, gimnasio y áreas comunes en la mayoría de nuestros edificios; algunas con alberca privada')
     },
     {
       icon: Sun,
-      title: 'Rooftop & Terraza',
-      description: 'Terrazas y rooftops con vista para descansar al aire libre'
+      title: t('Rooftop & Terraza'),
+      description: t('Terrazas y rooftops con vista para descansar al aire libre')
     },
     {
       icon: Wifi,
-      title: 'WiFi',
-      description: 'Internet en todas las propiedades, para trabajar o ver tus series'
+      title: t('WiFi'),
+      description: t('Internet en todas las propiedades, para trabajar o ver tus series')
     },
     {
       icon: Shield,
-      title: 'Reserva Directa Segura',
-      description: 'Pagas en línea con Clip y recibes la confirmación de tu reserva por correo'
+      title: t('Reserva Directa Segura'),
+      description: t('Pagas en línea con Clip y recibes la confirmación de tu reserva por correo')
     },
     {
       icon: MapPin,
-      title: 'Ubicación',
-      description: 'Playa del Carmen cerca de la 5ª Avenida y la playa, además de Tulum y Mahahual'
+      title: t('Ubicación'),
+      description: t('Playa del Carmen cerca de la 5ª Avenida y la playa, además de Tulum y Mahahual')
     }
   ]
 
@@ -67,7 +69,7 @@ function Services() {
             transition={{ duration: 0.6 }}
             className="inline-block text-primary font-semibold tracking-wide uppercase text-sm mb-4"
           >
-            Experiencia Premium
+            {t('Experiencia Premium')}
           </motion.span>
 
           <motion.h2
@@ -76,7 +78,7 @@ function Services() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6"
           >
-            Todo lo que <span className="text-primary">Incluye tu Estancia</span>
+            {t('Todo lo que ')}<span className="text-primary">{t('Incluye tu Estancia')}</span>
           </motion.h2>
 
           <motion.p
@@ -85,8 +87,7 @@ function Services() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-muted text-lg"
           >
-            Pensamos en los detalles para que solo te preocupes de disfrutar:
-            comodidad, buena ubicación y atención directa de nuestro equipo.
+            {t('Pensamos en los detalles para que solo te preocupes de disfrutar: comodidad, buena ubicación y atención directa de nuestro equipo.')}
           </motion.p>
         </div>
 
@@ -127,11 +128,10 @@ function Services() {
           className="mt-16 bg-foreground rounded-3xl p-8 md:p-12 text-center"
         >
           <h3 className="font-display text-2xl md:text-3xl font-bold text-white mb-4">
-            ¿Necesitas algo especial?
+            {t('¿Necesitas algo especial?')}
           </h3>
           <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-            Nuestro equipo de concierge está disponible para organizar cualquier servicio adicional:
-            transporte privado, excursiones, spa en suite, celebraciones especiales y más.
+            {t('Escríbenos y vemos cómo ayudarte con transporte, recomendaciones o cualquier duda sobre tu estancia.')}
           </p>
           <motion.a
             href="#contact"
@@ -139,7 +139,7 @@ function Services() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Contactar Concierge
+            {t('Contactar')}
           </motion.a>
         </motion.div>
       </div>

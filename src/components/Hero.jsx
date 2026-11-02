@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Calendar, Users, Loader2 } from 'lucide-react'
 import { api } from '../lib/api'
+import { useI18n } from '../lib/i18n'
 
 function Hero() {
+  const { t } = useI18n()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [search, setSearch] = useState({ arrivalDate: '', departureDate: '', guests: 1 })
   const [feedback, setFeedback] = useState({ type: '', text: '' })
@@ -12,20 +14,20 @@ function Hero() {
   const slides = useMemo(() => ([
     {
       image: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=1920&h=1080&fit=crop',
-      title: 'Vive el Lujo',
-      subtitle: 'Frente al Mar'
+      title: t('Vive el Lujo'),
+      subtitle: t('Frente al Mar')
     },
     {
       image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1920&h=1080&fit=crop',
-      title: 'Experiencias',
-      subtitle: 'Inolvidables'
+      title: t('Experiencias'),
+      subtitle: t('Inolvidables')
     },
     {
       image: 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=1920&h=1080&fit=crop',
-      title: 'Tu Hogar',
-      subtitle: 'En el Caribe'
+      title: t('Tu Hogar'),
+      subtitle: t('En el Caribe')
     }
-  ]), [])
+  ]), [t])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -36,7 +38,7 @@ function Hero() {
 
   const handleSearch = async () => {
     if (!search.arrivalDate || !search.departureDate) {
-      setFeedback({ type: 'error', text: 'Selecciona fechas de llegada y salida.' })
+      setFeedback({ type: 'error', text: t('Selecciona fechas de llegada y salida.') })
       return
     }
 
@@ -49,8 +51,8 @@ function Hero() {
       setFeedback({
         type: 'success',
         text: availableCount > 0
-          ? `${availableCount} opciones disponibles para esas fechas. Mira las propiedades abajo.`
-          : 'No encontramos disponibilidad para esas fechas. Prueba con otras fechas o escríbenos por WhatsApp.'
+          ? t('{n} opciones disponibles para esas fechas. Mira las propiedades abajo.', { n: availableCount })
+          : t('No encontramos disponibilidad para esas fechas. Prueba con otras fechas o escríbenos por WhatsApp.')
       })
 
       window.dispatchEvent(new CustomEvent('arv:availability-results', { detail: { ...result, search: { ...search } } }))
@@ -112,8 +114,7 @@ function Hero() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-white/80 text-lg md:text-xl max-w-2xl mx-auto mb-10"
             >
-              Departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual.
-              Reserva directo, con disponibilidad y precios en tiempo real.
+              {t('Departamentos y estudios vacacionales en Playa del Carmen, Tulum y Mahahual. Reserva directo, con disponibilidad y precios en tiempo real.')}
             </motion.p>
 
             <motion.div
@@ -128,7 +129,7 @@ function Hero() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Reservar Ahora
+                {t('Reservar Ahora')}
               </motion.a>
               <motion.a
                 href="#properties"
@@ -137,7 +138,7 @@ function Hero() {
                 whileTap={{ scale: 0.95 }}
               >
                 <Play className="w-5 h-5" />
-                Ver Propiedades
+                {t('Ver Propiedades')}
               </motion.a>
             </motion.div>
 
@@ -148,7 +149,7 @@ function Hero() {
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-5 py-2 text-sm text-white"
             >
               <span className="w-2 h-2 bg-primary rounded-full" />
-              Precio más bajo garantizado reservando en nuestra página
+              {t('Precio más bajo garantizado reservando en nuestra página')}
             </motion.p>
           </div>
         </div>
@@ -163,7 +164,7 @@ function Hero() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-white/60 text-sm font-medium flex items-center gap-2">
-                  <Calendar className="w-4 h-4" /> Llegada
+                  <Calendar className="w-4 h-4" /> {t('Llegada')}
                 </label>
                 <input
                   type="date"
@@ -174,7 +175,7 @@ function Hero() {
               </div>
               <div className="space-y-2">
                 <label className="text-white/60 text-sm font-medium flex items-center gap-2">
-                  <Calendar className="w-4 h-4" /> Salida
+                  <Calendar className="w-4 h-4" /> {t('Salida')}
                 </label>
                 <input
                   type="date"
@@ -185,7 +186,7 @@ function Hero() {
               </div>
               <div className="space-y-2">
                 <label className="text-white/60 text-sm font-medium flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Huéspedes
+                  <Users className="w-4 h-4" /> {t('Huéspedes')}
                 </label>
                 <div className="flex gap-2">
                   <select
@@ -205,7 +206,7 @@ function Hero() {
                     whileTap={{ scale: 0.95 }}
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    Buscar
+                    {t('Buscar')}
                   </motion.button>
                 </div>
               </div>

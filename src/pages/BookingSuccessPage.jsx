@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle, Home, MessageCircle } from 'lucide-react'
 import { buildWhatsAppLink } from '../lib/config'
+import { useI18n } from '../lib/i18n'
 
 function BookingSuccessPage() {
+  const { t } = useI18n()
   const [params, setParams] = useState({})
 
   useEffect(() => {
@@ -33,31 +35,37 @@ function BookingSuccessPage() {
         </motion.div>
 
         <h1 className="font-display text-3xl font-bold text-foreground mb-3">
-          ¡Reserva Confirmada!
+          {t('¡Reserva Confirmada!')}
         </h1>
 
         {isMock ? (
           <p className="text-muted mb-4">
-            Esta es una reserva de prueba (modo demo). En producción, aquí recibirías la confirmación real con los detalles de tu estancia.
+            {t('Esta es una reserva de prueba (modo demo). En producción, aquí recibirías la confirmación real con los detalles de tu estancia.')}
           </p>
         ) : (
           <p className="text-muted mb-4">
-            Tu pago fue procesado exitosamente. En unos minutos recibirás un correo de confirmación con todos los detalles de tu reserva.
+            {t('Tu pago fue procesado exitosamente. En unos minutos recibirás un correo de confirmación con todos los detalles de tu reserva.')}
+          </p>
+        )}
+
+        {params.ref && (
+          <p className="text-sm text-foreground/80 mb-4">
+            {t('Referencia:')} <span className="font-mono font-semibold">{params.ref}</span>
           </p>
         )}
 
         {params.property && (
           <div className="bg-beige rounded-2xl px-4 py-3 mb-6 text-sm text-foreground/80 space-y-1">
-            <p><strong>Propiedad:</strong> {decodeURIComponent(params.property)}</p>
-            {params.arrival && <p><strong>Llegada:</strong> {params.arrival}</p>}
-            {params.departure && <p><strong>Salida:</strong> {params.departure}</p>}
+            <p><strong>{t('Propiedad:')}</strong> {decodeURIComponent(params.property)}</p>
+            {params.arrival && <p><strong>{t('Llegada:')}</strong> {params.arrival}</p>}
+            {params.departure && <p><strong>{t('Salida:')}</strong> {params.departure}</p>}
             {params.email && <p><strong>Email:</strong> {decodeURIComponent(params.email)}</p>}
           </div>
         )}
 
         {!isMock && params.session_id && (
           <p className="text-xs text-muted mb-6">
-            Referencia: <span className="font-mono">{params.session_id.slice(-12)}</span>
+            {t('Referencia:')} <span className="font-mono">{params.session_id.slice(-12)}</span>
           </p>
         )}
 
@@ -67,17 +75,17 @@ function BookingSuccessPage() {
             className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary-hover text-white font-semibold py-3 rounded-xl transition-all"
           >
             <Home className="w-5 h-5" />
-            Volver al inicio
+            {t('Volver al inicio')}
           </a>
 
           <a
-            href={buildWhatsAppLink('Hola, acabo de realizar una reserva en AR Vacaciones y tengo una pregunta.')}
+            href={buildWhatsAppLink(t('Hola, acabo de realizar una reserva en AR Vacaciones y tengo una pregunta.'))}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full border-2 border-green-500 hover:bg-green-50 text-green-600 font-semibold py-3 rounded-xl transition-all"
           >
             <MessageCircle className="w-5 h-5" />
-            Contactar por WhatsApp
+            {t('Contactar por WhatsApp')}
           </a>
         </div>
       </motion.div>

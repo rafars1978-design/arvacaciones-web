@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config'
+import { getLang } from './i18n'
 
 const TIMEOUT_MS = 65_000 // 65 seconds — enough for Render cold start (~30-60s)
 
@@ -12,6 +13,7 @@ async function request(path, options = {}) {
                   signal: controller.signal,
                   headers: {
                             'Content-Type': 'application/json',
+                            'X-Lang': getLang(),
                             ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
                             ...(options.headers || {})
                   },

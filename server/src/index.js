@@ -555,6 +555,31 @@ const fetchBrokerBookings = async () => {
   return rows
 }
 
+// ─── MESSAGES SHOWN TO GUESTS (es/en/fr/de) ────────────────────────────────────
+const MESSAGES = {
+  'Esas fechas no están disponibles.': { en: 'Those dates are not available.', fr: 'Ces dates ne sont pas disponibles.', de: 'Diese Daten sind nicht verfügbar.' },
+  'La fecha de salida debe ser posterior a la de llegada.': { en: 'The check-out date must be after the check-in date.', fr: "La date de départ doit être postérieure à la date d'arrivée.", de: 'Das Abreisedatum muss nach dem Anreisedatum liegen.' },
+  'No pudimos confirmar la disponibilidad. Intenta de nuevo.': { en: "We couldn't confirm availability. Please try again.", fr: "Nous n'avons pas pu confirmer la disponibilité. Veuillez réessayer.", de: 'Wir konnten die Verfügbarkeit nicht bestätigen. Bitte versuchen Sie es erneut.' },
+  'No pudimos iniciar el pago con Clip. Intenta de nuevo.': { en: "We couldn't start the payment. Please try again.", fr: 'Impossible de lancer le paiement. Veuillez réessayer.', de: 'Die Zahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.' },
+  'Faltan campos requeridos para la reserva.': { en: 'Some required booking fields are missing.', fr: 'Des champs obligatoires de la réservation sont manquants.', de: 'Erforderliche Buchungsfelder fehlen.' },
+  'arrivalDate y departureDate son obligatorios.': { en: 'Check-in and check-out dates are required.', fr: "Les dates d'arrivée et de départ sont obligatoires.", de: 'An- und Abreisedatum sind erforderlich.' },
+  'No pudimos calcular la cotización.': { en: "We couldn't calculate the quote.", fr: 'Impossible de calculer le devis.', de: 'Das Angebot konnte nicht berechnet werden.' },
+  'Faltan datos para cotizar.': { en: 'Some details are missing to quote.', fr: 'Des informations manquent pour établir le devis.', de: 'Für das Angebot fehlen Angaben.' }
+}
+const langOf = (req) => {
+  const l = String(req.headers['x-lang'] || '').toLowerCase()
+  return ['en', 'fr', 'de'].includes(l) ? l : 'es'
+}
+const tr = (req, text) => {
+  const l = langOf(req)
+  if (l === 'es') return text
+  const min = /^La estancia mínima para esas fechas es de (\d+) noches\.$/.exec(text)
+  if (min) {
+    return { en: `The minimum stay for those dates is ${min[1]} nights.`, fr: `Le séjour minimum pour ces dates est de ${min[1]} nuits.`, de: `Der Mindestaufenthalt für diese Daten beträgt ${min[1]} Nächte.` }[l]
+  }
+  return MESSAGES[text]?.[l] || text
+}
+
 // ─── ROUTES ────────────────────────────────────────────────────────────────────
 
 app.get('/api/health', (_, res) => {
@@ -950,7 +975,7 @@ app.post('/api/search/availability', async (req, res) => {
   try {
     const { arrivalDate, departureDate, guests } = req.body || {}
     if (!arrivalDate || !departureDate) {
-      return res.status(400).json({ message: 'arrivalDate y departureDate son obligatorios.' })
+      return res.status(400).json({ message: tr(req, 'arrivalDate y departureDate son obligatorios.') })
     }
 
     if (useMock) {
@@ -967,7 +992,7 @@ app.post('/api/search/availability', async (req, res) => {
       allBookings = await fetchSmoobuBookings({ from: arrivalDate, to: departureDate })
     } catch (err) {
       console.error('Bookings check failed:', err.message)
-      return res.status(502).json({ message: 'No pudimos confirmar la disponibilidad. Intenta de nuevo.' })
+      return res.status(502).json({ message: tr(req, 'No pudimos confirmar la disponibilidad. Intenta de nuevo.') })
     }
     const quotes = await Promise.all(properties.map(async (p) => {
       const mine = allBookings.filter((b) => String(b.apartment?.id) === p.smoobuApartmentId)
@@ -996,12 +1021,13 @@ app.post('/api/quote', async (req, res) => {
   try {
     const { smoobuApartmentId, arrivalDate, departureDate } = req.body || {}
     if (!smoobuApartmentId || !arrivalDate || !departureDate) {
-      return res.status(400).json({ ok: false, message: 'Faltan datos para cotizar.' })
+      return res.status(400).json({ ok: false, message: tr(req, 'Faltan datos para cotizar.') })
     }
     const known = (await buildLiveProperties()).find((p) => p.smoobuApartmentId === String(smoobuApartmentId))
     if (!known) return res.status(404).json({ ok: false, message: 'Propiedad no encontrada.' })
     const quote = await computeQuote({ smoobuApartmentId, arrivalDate, departureDate })
     const out = { ...quote, currency: known.currency }
+    if (out.message) out.message = tr(req, out.message)
     if (quote.ok && clipEnabled) {
       try {
         const { amountMxn, rate } = await toMxn(quote.total, known.currency)
@@ -1012,7 +1038,7 @@ app.post('/api/quote', async (req, res) => {
     res.json(out)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ ok: false, message: 'No pudimos calcular la cotización.' })
+    res.status(500).json({ ok: false, message: tr(req, 'No pudimos calcular la cotización.') })
   }
 })
 
@@ -1054,14 +1080,14 @@ app.post('/api/bookings/checkout', async (req, res) => {
     } = req.body || {}
 
     if (!propertyId || !arrivalDate || !departureDate || !email) {
-      return res.status(400).json({ message: 'Faltan campos requeridos para la reserva.' })
+      return res.status(400).json({ message: tr(req, 'Faltan campos requeridos para la reserva.') })
     }
 
     // Never trust the browser's total: re-price the stay from Smoobu rates
     const known = !useMock && smoobuApartmentId
       ? await computeQuote({ smoobuApartmentId, arrivalDate, departureDate })
       : null
-    if (known && !known.ok) return res.status(409).json({ message: known.message })
+    if (known && !known.ok) return res.status(409).json({ message: tr(req, known.message) })
     const chargeTotal = known?.ok ? known.total : totalPrice
 
     // Clip: redirected checkout in MXN, booking is confirmed by the webhook
@@ -1090,7 +1116,7 @@ app.post('/api/bookings/checkout', async (req, res) => {
       const clipData = await clipResp.json().catch(() => ({}))
       if (!clipResp.ok || !clipData.payment_request_url) {
         console.error('[Clip] checkout error:', clipResp.status, JSON.stringify(clipData).slice(0, 400))
-        return res.status(502).json({ message: 'No pudimos iniciar el pago con Clip. Intenta de nuevo.' })
+        return res.status(502).json({ message: tr(req, 'No pudimos iniciar el pago con Clip. Intenta de nuevo.') })
       }
 
       const broker = await findBroker(req.body?.brokerCode)

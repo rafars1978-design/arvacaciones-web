@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Menu, X, Phone } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { buildWhatsAppLink } from '../lib/config'
+import { useI18n } from '../lib/i18n'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const navLinks = [
   { name: 'Inicio', id: 'hero' },
@@ -15,6 +17,7 @@ const navLinks = [
 // Slim header: transparent over the hero, compact white bar after scrolling,
 // hides while reading downwards and comes back as soon as you scroll up.
 function Navbar() {
+  const { t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [hidden, setHidden] = useState(false)
@@ -92,9 +95,10 @@ function Navbar() {
                 onClick={goTo(link.id)}
                 className={`text-sm font-medium transition-colors ${solid ? 'text-foreground hover:text-primary' : 'text-white/90 hover:text-white'}`}
               >
-                {link.name}
+                {t(link.name)}
               </a>
             ))}
+            <LanguageSwitcher solid={solid} />
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
@@ -109,13 +113,13 @@ function Navbar() {
               onClick={goTo('properties')}
               className="bg-primary hover:bg-primary-hover text-white px-5 py-2 rounded-lg font-medium text-sm transition-all"
             >
-              Reservar
+              {t('Reservar')}
             </a>
           </div>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            aria-label="Menú"
+            aria-label={t('Menú')}
             className={`lg:hidden p-2 rounded-lg transition-colors ${solid ? 'text-foreground hover:bg-gray-100' : 'text-white hover:bg-white/10'}`}
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -139,11 +143,12 @@ function Navbar() {
                   onClick={goTo(link.id)}
                   className="block text-foreground hover:text-primary py-2.5 font-medium"
                 >
-                  {link.name}
+                  {t(link.name)}
                 </a>
               ))}
+              <div className="py-1"><LanguageSwitcher solid align="left" /></div>
               <a
-                href={buildWhatsAppLink('Hola, me interesa reservar una propiedad con AR Vacaciones')}
+                href={buildWhatsAppLink(t('Hola, me interesa reservar una propiedad con AR Vacaciones'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-foreground hover:text-primary py-2.5 font-medium"
@@ -155,7 +160,7 @@ function Navbar() {
                 onClick={goTo('properties')}
                 className="block bg-primary text-white px-6 py-3 rounded-lg text-center font-medium mt-2"
               >
-                Reservar
+                {t('Reservar')}
               </a>
             </div>
           </motion.div>

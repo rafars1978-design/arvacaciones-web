@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { buildWhatsAppLink } from '../lib/config'
+import { useI18n } from '../lib/i18n'
+import { LEGAL_I18N } from '../i18n/legal'
 
 const UPDATED = '2 de noviembre de 2026'
 
@@ -66,11 +68,15 @@ const PAGES = {
 }
 
 function LegalPage({ page }) {
-  const data = PAGES[page]
+  const { t, lang } = useI18n()
+  const translated = lang !== 'es' ? LEGAL_I18N[lang] : null
+  const data = translated?.pages?.[page] || PAGES[page]
+  const updated = translated?.updated || UPDATED
+  const updatedLabel = translated?.label || 'Última actualización'
 
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [page])
+  }, [page, lang])
 
   if (!data) return null
 
@@ -78,11 +84,13 @@ function LegalPage({ page }) {
     <main className="min-h-screen bg-beige pt-28 pb-20">
       <div className="max-w-3xl mx-auto px-4 md:px-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary hover:underline mb-6">
-          <ArrowLeft className="w-4 h-4" /> Volver al inicio
+          <ArrowLeft className="w-4 h-4" /> {t('Volver al inicio')}
         </Link>
         <article className="bg-white rounded-3xl shadow-sm p-6 md:p-10">
           <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">{data.title}</h1>
-          <p className="text-sm text-muted mb-8">Última actualización: {UPDATED}</p>
+          <p className="text-sm text-muted mb-2">{updatedLabel}: {updated}</p>
+          {translated && <p className="text-xs text-muted italic mb-8">{translated.note}</p>}
+          {!translated && <div className="mb-6" />}
 
           {data.sections.map(([heading, paragraphs]) => (
             <section key={heading} className="mb-7">
@@ -94,12 +102,12 @@ function LegalPage({ page }) {
           ))}
 
           <a
-            href={buildWhatsAppLink('Hola, tengo una duda sobre mi reserva con AR Vacaciones')}
+            href={buildWhatsAppLink(t('Hola, tengo una duda sobre mi reserva con AR Vacaciones'))}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block mt-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl font-medium text-sm"
           >
-            Escríbenos por WhatsApp
+            {t('Escríbenos por WhatsApp')}
           </a>
         </article>
       </div>

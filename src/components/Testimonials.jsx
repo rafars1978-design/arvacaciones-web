@@ -1,8 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import { useI18n } from '../lib/i18n'
 
 function Testimonials() {
+  const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const [current, setCurrent] = useState(0)
@@ -63,7 +65,7 @@ function Testimonials() {
             transition={{ duration: 0.6 }}
             className="inline-block text-primary font-semibold tracking-wide uppercase text-sm mb-4"
           >
-            Testimonios
+            {t('Testimonios')}
           </motion.span>
 
           <motion.h2
@@ -72,7 +74,7 @@ function Testimonials() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl md:text-5xl font-bold text-foreground mb-6"
           >
-            Lo que Dicen <span className="text-primary">Nuestros Huéspedes</span>
+            {t('Lo que Dicen ')}<span className="text-primary">{t('Nuestros Huéspedes')}</span>
           </motion.h2>
         </div>
 

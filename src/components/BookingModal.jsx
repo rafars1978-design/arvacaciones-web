@@ -3,8 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Users, Loader2, CreditCard } from 'lucide-react'
 import { api } from '../lib/api'
 import { getBroker } from '../lib/broker'
+import { useI18n } from '../lib/i18n'
+
+// Quote errors come from the server in Spanish; show them in the visitor's language
+const quoteMessage = (q, t) => {
+  if (q.reason === 'unavailable') return t('Esas fechas no están disponibles.')
+  if (q.reason === 'min_stay') return t('La estancia mínima para esas fechas es de {n} noches.', { n: q.minNights })
+  if (q.reason === 'smoobu') return t('No pudimos confirmar la disponibilidad. Intenta de nuevo.')
+  if (q.reason === 'dates') return t('La fecha de salida debe ser posterior a la de llegada.')
+  return q.message
+}
 
 function BookingModal({ property, availability, onClose }) {
+  const { t } = useI18n()
   const today = new Date().toISOString().split('T')[0]
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
@@ -36,7 +47,7 @@ function BookingModal({ property, availability, onClose }) {
   useEffect(() => {
     if (!property.smoobuApartmentId || !form.arrivalDate || !form.departureDate) return undefined
     if (new Date(form.departureDate) <= new Date(form.arrivalDate)) {
-      setQuote({ ok: false, message: 'La fecha de salida debe ser posterior a la de llegada.' })
+      setQuote({ ok: false, message: t('La fecha de salida debe ser posterior a la de llegada.') })
       return undefined
     }
     let cancelled = false
@@ -73,11 +84,11 @@ function BookingModal({ property, availability, onClose }) {
     setError('')
 
     if (!form.firstName || !form.lastName || !form.email) {
-      setError('Por favor completa todos los campos obligatorios.')
+      setError(t('Por favor completa todos los campos obligatorios.'))
       return
     }
     if (new Date(form.departureDate) <= new Date(form.arrivalDate)) {
-      setError('La fecha de salida debe ser posterior a la de llegada.')
+      setError(t('La fecha de salida debe ser posterior a la de llegada.'))
       return
     }
 
@@ -102,10 +113,10 @@ function BookingModal({ property, availability, onClose }) {
       if (result.url) {
         window.location.href = result.url
       } else {
-        setError('No se pudo iniciar el pago. Intenta de nuevo.')
+        setError(t('No se pudo iniciar el pago. Intenta de nuevo.'))
       }
     } catch (err) {
-      setError(err.message || 'Error al procesar la reserva.')
+      setError(err.message || t('Error al procesar la reserva.'))
     } finally {
       setLoading(false)
     }
@@ -143,7 +154,7 @@ function BookingModal({ property, availability, onClose }) {
             <div className="absolute bottom-4 left-5 right-12">
               <h2 className="text-white font-display text-xl font-bold leading-tight">{property.name}</h2>
               <p className="text-white/80 text-sm mt-0.5">
-                desde ${Math.round(pricePerNight)} {currency} / noche + IVA
+                {t('desde')} ${Math.round(pricePerNight)} {currency}{t(' / noche')} {t('+ IVA 16%')}
               </p>
             </div>
             <button
@@ -162,7 +173,7 @@ function BookingModal({ property, availability, onClose }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">
-                    <Calendar className="w-3 h-3 inline mr-1" />Llegada *
+                    <Calendar className="w-3 h-3 inline mr-1" />{t('Llegada *')}
                   </label>
                   <input
                     type="date"
@@ -176,7 +187,7 @@ function BookingModal({ property, availability, onClose }) {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">
-                    <Calendar className="w-3 h-3 inline mr-1" />Salida *
+                    <Calendar className="w-3 h-3 inline mr-1" />{t('Salida *')}
                   </label>
                   <input
                     type="date"
@@ -193,7 +204,7 @@ function BookingModal({ property, availability, onClose }) {
               {/* Guests */}
               <div>
                 <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">
-                  <Users className="w-3 h-3 inline mr-1" />Huéspedes *
+                  <Users className="w-3 h-3 inline mr-1" />{t('Huéspedes *')}
                 </label>
                 <select
                   name="guests"
@@ -202,7 +213,7 @@ function BookingModal({ property, availability, onClose }) {
                   className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 >
                   {Array.from({ length: property.guests || 8 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>{n} huésped{n !== 1 ? 'es' : ''}</option>
+                    <option key={n} value={n}>{n} {n === 1 ? t('huésped') : t('huéspedes')}</option>
                   ))}
                 </select>
               </div>
@@ -210,25 +221,25 @@ function BookingModal({ property, availability, onClose }) {
               {/* Guest info */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">Nombre *</label>
+                  <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">{t('Nombre *')}</label>
                   <input
                     type="text"
                     name="firstName"
                     value={form.firstName}
                     onChange={handleChange}
-                    placeholder="Juan"
+                    placeholder={t('Juan')}
                     required
                     className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">Apellido *</label>
+                  <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">{t('Apellido *')}</label>
                   <input
                     type="text"
                     name="lastName"
                     value={form.lastName}
                     onChange={handleChange}
-                    placeholder="García"
+                    placeholder={t('García')}
                     required
                     className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                   />
@@ -236,20 +247,20 @@ function BookingModal({ property, availability, onClose }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">Email *</label>
+                <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">{t('Email *')}</label>
                 <input
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="correo@ejemplo.com"
+                  placeholder={t('correo@ejemplo.com')}
                   required
                   className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">Teléfono (opcional)</label>
+                <label className="block text-xs font-semibold text-foreground/70 mb-1 uppercase tracking-wide">{t('Teléfono (opcional)')}</label>
                 <input
                   type="tel"
                   name="phone"
@@ -262,34 +273,34 @@ function BookingModal({ property, availability, onClose }) {
 
               {/* Price summary */}
               <div className="rounded-2xl bg-beige p-4 space-y-2">
-                {quoting && <p className="text-xs text-muted">Calculando precio…</p>}
+                {quoting && <p className="text-xs text-muted">{t('Calculando precio…')}</p>}
                 {!quoting && quote && !quote.ok && (
-                  <p className="text-sm text-red-600">{quote.message}</p>
+                  <p className="text-sm text-red-600">{quoteMessage(quote, t)}</p>
                 )}
                 {hasQuote && !quoting && (
                   <>
                     <div className="flex justify-between text-sm text-muted">
-                      <span>{quote.nights} noche{quote.nights !== 1 ? 's' : ''}{quote.discountRate > 0 ? '' : ` (prom. $${fmt(quote.nightlyAvg)} / noche)`}</span>
+                      <span>{quote.nights} {quote.nights === 1 ? t('noche') : t('noches')}{quote.discountRate > 0 ? '' : ` (${t('prom.')} $${fmt(quote.nightlyAvg)}${t(' / noche')})`}</span>
                       <span>${fmt(quote.lodgingGross ?? quote.lodging)}</span>
                     </div>
                     {quote.discountRate > 0 && (
                       <div className="flex justify-between text-sm text-primary font-medium">
-                        <span>{quote.discountLabel}</span>
+                        <span>{quote.discountRate >= 0.2 ? t('Descuento por estancia de 1 mes (20%)') : t('Descuento por estancia de 1 semana (10%)')}</span>
                         <span>-${fmt(quote.discountAmount)}</span>
                       </div>
                     )}
                     {quote.cleaning > 0 && (
                       <div className="flex justify-between text-sm text-muted">
-                        <span>Limpieza</span>
+                        <span>{t('Limpieza')}</span>
                         <span>${fmt(quote.cleaning)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm text-muted">
-                      <span>IVA {Math.round(quote.ivaRate * 100)}%</span>
+                      <span>{t('IVA {n}%', { n: Math.round(quote.ivaRate * 100) })}</span>
                       <span>${fmt(quote.iva)}</span>
                     </div>
                     {quote.minNights > 1 && (
-                      <p className="text-xs text-muted">Estancia mínima en estas fechas: {quote.minNights} noches.</p>
+                      <p className="text-xs text-muted">{t('Estancia mínima en estas fechas: {n} noches.', { n: quote.minNights })}</p>
                     )}
                   </>
                 )}
@@ -300,12 +311,12 @@ function BookingModal({ property, availability, onClose }) {
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-foreground border-t border-border pt-2 mt-2">
-                  <span>Total {hasQuote ? '(IVA incluido)' : ''}</span>
+                  <span>{t('Total')} {hasQuote ? t('(IVA incluido)') : ''}</span>
                   <span>{hasQuote || !property.smoobuApartmentId ? `$${fmt(totalPrice)} ${currency}` : '—'}</span>
                 </div>
                 {hasQuote && quote.totalMxn > 0 && (
                   <p className="text-xs text-muted text-right">
-                    Se cobra en pesos: ≈ ${fmt(quote.totalMxn)} MXN (tipo de cambio {fmt(quote.fxRate)})
+                    {t('Se cobra en pesos: ≈ ${amt} MXN (tipo de cambio {rate})', { amt: fmt(quote.totalMxn), rate: fmt(quote.fxRate) })}
                   </p>
                 )}
               </div>
@@ -322,22 +333,22 @@ function BookingModal({ property, availability, onClose }) {
                 className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all"
               >
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Procesando…</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> {t('Procesando…')}</>
                 ) : (
-                  <><CreditCard className="w-5 h-5" /> Continuar al pago</>
+                  <><CreditCard className="w-5 h-5" /> {t('Continuar al pago')}</>
                 )}
               </button>
 
               <p className="text-center text-xs text-muted">
-                Pago seguro con Clip · Tarjeta de crédito o débito
+                {t('Pago seguro con Clip · Tarjeta de crédito o débito')}
               </p>
               {getBroker() && (
-                <p className="text-center text-xs text-primary font-medium">Reserva realizada a través de {getBroker().name}</p>
+                <p className="text-center text-xs text-primary font-medium">{t('Reserva realizada a través de {name}', { name: getBroker().name })}</p>
               )}
               <p className="text-center text-xs text-muted">
-                <strong>Tarifa no reembolsable.</strong> Al continuar aceptas los{' '}
-                <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="underline">Términos</a> y la{' '}
-                <a href="#/cancelacion" target="_blank" rel="noopener noreferrer" className="underline">Política de Cancelación</a>.
+                <strong>{t('Tarifa no reembolsable.')}</strong> {t('Al continuar aceptas los')}{' '}
+                <a href="#/terminos" target="_blank" rel="noopener noreferrer" className="underline">{t('Términos')}</a> {t('y la')}{' '}
+                <a href="#/cancelacion" target="_blank" rel="noopener noreferrer" className="underline">{t('Política de Cancelación')}</a>.
               </p>
             </form>
           </div>

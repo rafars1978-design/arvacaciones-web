@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Users, Home, MapPin, TrendingUp } from 'lucide-react'
+import { useI18n } from '../lib/i18n'
 
 function AnimatedCounter({ end, duration = 2, suffix = '' }) {
   const [count, setCount] = useState(0)
@@ -26,6 +27,7 @@ function AnimatedCounter({ end, duration = 2, suffix = '' }) {
 }
 
 function Metrics() {
+  const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
@@ -34,22 +36,22 @@ function Metrics() {
       icon: Users,
       value: 22,
       suffix: '',
-      label: 'Propiedades',
-      description: 'Departamentos y estudios listos para reservar'
+      label: t('Propiedades'),
+      description: t('Departamentos y estudios listos para reservar')
     },
     {
       icon: Home,
       value: 3,
       suffix: '',
-      label: 'Destinos',
-      description: 'Playa del Carmen, Tulum y Mahahual'
+      label: t('Destinos'),
+      description: t('Playa del Carmen, Tulum y Mahahual')
     },
     {
       icon: MapPin,
       value: 24,
       suffix: '/7',
-      label: 'Atención',
-      description: 'Por WhatsApp, antes y durante tu estancia'
+      label: t('Atención'),
+      description: t('Por WhatsApp, antes y durante tu estancia')
     }
   ]
 
@@ -75,7 +77,7 @@ function Metrics() {
             transition={{ duration: 0.6 }}
             className="inline-block text-primary font-semibold tracking-wide uppercase text-sm mb-4"
           >
-            Nuestros Logros
+            {t('Nuestros Logros')}
           </motion.span>
 
           <motion.h2
@@ -84,7 +86,7 @@ function Metrics() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl md:text-5xl font-bold text-white mb-6"
           >
-            Números que <span className="text-primary">Hablan</span>
+            {t('Números que ')}<span className="text-primary">{t('Hablan')}</span>
           </motion.h2>
         </div>
 

@@ -2,8 +2,10 @@ import React, { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Calendar, MessageCircle, Phone } from 'lucide-react'
 import { buildWhatsAppLink } from '../lib/config'
+import { useI18n } from '../lib/i18n'
 
 function BookingCTA() {
+  const { t } = useI18n()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
@@ -18,39 +20,39 @@ function BookingCTA() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <motion.span initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }} className="inline-block text-primary font-semibold tracking-wide uppercase text-sm mb-4">
-              Reserva tu próxima estancia
+              {t('Reserva tu próxima estancia')}
             </motion.span>
             <motion.h2 initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.1 }} className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-              Reserva directo.<br /><span className="text-primary">Sin intermediarios.</span>
+              {t('Reserva directo.')}<br /><span className="text-primary">{t('Sin intermediarios.')}</span>
             </motion.h2>
             <motion.p initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} className="text-white/75 text-lg leading-relaxed mb-10 max-w-2xl">
-              Elige tu departamento, consulta disponibilidad y precios en tiempo real con nuestro sistema personalizado y paga en línea de forma segura. Si prefieres, te atendemos por WhatsApp.
+              {t('Elige tu departamento, consulta disponibilidad y precios en tiempo real con nuestro sistema personalizado y paga en línea de forma segura. Si prefieres, te atendemos por WhatsApp.')}
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-col sm:flex-row gap-4">
               <motion.a href="#properties" className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-xl font-semibold transition-all" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Calendar className="w-5 h-5" /> Reservar Ahora
+                <Calendar className="w-5 h-5" /> {t('Reservar Ahora')}
               </motion.a>
-              <motion.a href={buildWhatsAppLink('Hola, quiero ayuda para encontrar una propiedad en AR Vacaciones')} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-semibold transition-all" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <motion.a href={buildWhatsAppLink(t('Hola, quiero ayuda para encontrar una propiedad en AR Vacaciones'))} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-semibold transition-all" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <MessageCircle className="w-5 h-5" /> WhatsApp
               </motion.a>
             </motion.div>
           </div>
 
           <motion.div initial={{ opacity: 0, x: 50 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.3 }} className="glass rounded-3xl p-8 md:p-10">
-            <h3 className="font-display text-2xl font-bold text-white mb-6">Contacto Rápido</h3>
+            <h3 className="font-display text-2xl font-bold text-white mb-6">{t('Contacto Rápido')}</h3>
             <div className="space-y-6 mb-8">
               <a href="tel:+529843100691" className="flex items-center gap-4 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors group">
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"><Phone className="w-6 h-6 text-white" /></div>
-                <div><p className="text-white/60 text-sm">Llámanos</p><p className="text-white font-semibold">+52 984 310 0691</p></div>
+                <div><p className="text-white/60 text-sm">{t('Llámanos')}</p><p className="text-white font-semibold">+52 984 310 0691</p></div>
               </a>
-              <a href={buildWhatsAppLink('Hola, me interesa reservar una propiedad con AR Vacaciones')} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors group">
+              <a href={buildWhatsAppLink(t('Hola, me interesa reservar una propiedad con AR Vacaciones'))} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors group">
                 <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"><MessageCircle className="w-6 h-6 text-white" /></div>
-                <div><p className="text-white/60 text-sm">WhatsApp</p><p className="text-white font-semibold">Respuesta inmediata</p></div>
+                <div><p className="text-white/60 text-sm">WhatsApp</p><p className="text-white font-semibold">{t('Respuesta inmediata')}</p></div>
               </a>
             </div>
             <div className="pt-6 border-t border-white/20">
-              <p className="text-white/60 text-sm mb-2">Horario de atención</p>
-              <p className="text-white font-medium">24/7 - Siempre disponibles</p>
+              <p className="text-white/60 text-sm mb-2">{t('Horario de atención')}</p>
+              <p className="text-white font-medium">{t('24/7 - Siempre disponibles')}</p>
             </div>
           </motion.div>
         </div>
