@@ -175,13 +175,42 @@ const fetchSmoobuRates = async (ids) => {
   return out
 }
 
+// Real bookings and owner blocks ("Blocked channel") for a date range. The daily rates endpoint
+// reports "available" even for blocked dates, so every stay is also checked against these.
+const fetchSmoobuBookings = async ({ from, to, apartmentId }) => {
+  const all = []
+  for (let page = 1; page <= 10; page++) {
+    const qs = new URLSearchParams({ from, to, showCancellation: 'false', pageSize: '100', page: String(page) })
+    if (apartmentId) qs.set('apartmentId', String(apartmentId))
+    const res = await fetch(`https://login.smoobu.com/api/reservations?${qs}`, { headers: smoobuHeaders() })
+    if (!res.ok) throw new Error(`Smoobu reservations error: ${res.status}`)
+    const body = await res.json()
+    all.push(...(body.bookings || []))
+    if (page >= (Number(body.page_count) || 1)) break
+  }
+  return all.filter((b) => b.type !== 'cancellation')
+}
+
+const overlapsStay = (b, arrivalDate, departureDate) => b.arrival < departureDate && b.departure > arrivalDate
+
 const readFees = async () => JSON.parse(await fs.readFile(feesPath, 'utf-8').catch(() => '{}'))
 
 // Price a stay from Smoobu rates: nightly total + cleaning fee + 16% IVA
-const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate }) => {
+const computeQuote = async ({ smoobuApartmentId, arrivalDate, departureDate, bookings }) => {
   const nights = Math.round((new Date(departureDate) - new Date(arrivalDate)) / 86400000)
   if (!(nights >= 1)) return { ok: false, reason: 'dates', message: 'La fecha de salida debe ser posterior a la de llegada.' }
   const id = String(smoobuApartmentId)
+  let busy
+  try {
+    busy = bookings || await fetchSmoobuBookings({ from: arrivalDate, to: departureDate, apartmentId: id })
+  } catch (err) {
+    console.error('Bookings check failed:', err.message)
+    return { ok: false, reason: 'smoobu', message: 'No pudimos confirmar la disponibilidad. Intenta de nuevo.' }
+  }
+  if (busy.some((b) => overlapsStay(b, arrivalDate, departureDate))) {
+    return { ok: false, reason: 'unavailable', message: 'Esas fechas no están disponibles.' }
+  }
+
   const [range, fees] = await Promise.all([
     fetchSmoobuRatesRange([id], arrivalDate, addDays(departureDate, -1)),
     readFees()
@@ -579,8 +608,16 @@ app.post('/api/search/availability', async (req, res) => {
     }
 
     const properties = (await buildLiveProperties()).filter((p) => p.guests >= Number(guests || 1))
+    let allBookings
+    try {
+      allBookings = await fetchSmoobuBookings({ from: arrivalDate, to: departureDate })
+    } catch (err) {
+      console.error('Bookings check failed:', err.message)
+      return res.status(502).json({ message: 'No pudimos confirmar la disponibilidad. Intenta de nuevo.' })
+    }
     const quotes = await Promise.all(properties.map(async (p) => {
-      try { return [p, await computeQuote({ smoobuApartmentId: p.smoobuApartmentId, arrivalDate, departureDate })] } catch { return [p, { ok: false }] }
+      const mine = allBookings.filter((b) => String(b.apartment?.id) === p.smoobuApartmentId)
+      try { return [p, await computeQuote({ smoobuApartmentId: p.smoobuApartmentId, arrivalDate, departureDate, bookings: mine })] } catch { return [p, { ok: false }] }
     }))
     const availableProperties = quotes
       .filter(([, q]) => q.ok)

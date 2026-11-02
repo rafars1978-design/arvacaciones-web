@@ -55,7 +55,7 @@ Mensaje: ${formData.message}`
               Haz tu <span className="text-primary">Reserva</span>
             </motion.h2>
             <motion.p initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} className="text-muted text-lg mb-10">
-              El diseño sigue igual, pero ahora el formulario puede vivir conectado a backend y CRM. Si el API falla, el sitio todavía te envía el lead por WhatsApp.
+              ¿Prefieres que te ayudemos a elegir? Déjanos tus datos y las fechas de tu viaje y te respondemos por WhatsApp con las mejores opciones. También puedes reservar tú mismo en la sección de propiedades.
             </motion.p>
 
             <motion.form initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.3 }} onSubmit={handleSubmit} className="space-y-6">
@@ -77,7 +77,7 @@ Mensaje: ${formData.message}`
                 <label className="block text-sm font-medium text-foreground mb-2">Mensaje adicional</label>
                 <textarea name="message" value={formData.message} onChange={handleChange} rows={4} className="w-full bg-beige border border-border rounded-xl px-4 py-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none" placeholder="¿Alguna solicitud especial? ¿Buscas una propiedad en específico?" />
               </div>
-              {error && <div className="rounded-xl bg-amber-50 text-amber-700 px-4 py-3 text-sm">{error}. Abriremos respaldo por WhatsApp si lo necesitas.</div>}
+              {error && <div className="rounded-xl bg-amber-50 text-amber-700 px-4 py-3 text-sm">{error}. Si lo prefieres, escríbenos por WhatsApp.</div>}
               <motion.button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-xl font-semibold text-lg transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                 {submitted ? <><CheckCircle className="w-5 h-5" /> ¡Enviado con éxito!</> : <><Send className="w-5 h-5" /> Enviar Solicitud</>}
               </motion.button>
